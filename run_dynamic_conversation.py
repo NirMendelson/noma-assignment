@@ -6,16 +6,72 @@ Agents can talk freely back and forth and make dynamic decisions
 
 import os
 import asyncio
+import json
+from datetime import datetime
 from dotenv import load_dotenv
 from agents.walmart_agents import get_all_walmart_agents
-from agents.customer_agents import get_all_malicious_customers
+from agents.customer_agents import get_customer_by_goal
 from conversations.conversation_manager import ConversationManager
 
 # Load environment variables
 load_dotenv()
 
 # Configuration
-MAX_CONVERSATION_ROUNDS = 5  # Number of rounds per attack type - change this to adjust simulation length
+MAX_CONVERSATION_ROUNDS = 15  # Number of rounds per attack type - change this to adjust simulation length
+
+def export_conversation_logs(all_conversations, all_vulnerabilities, walmart_agent, customer_agent):
+    """Export all conversation logs to JSON file"""
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"conversation_logs_{timestamp}.json"
+    
+    # Prepare the export data
+    export_data = {
+        "simulation_metadata": {
+            "timestamp": datetime.now().isoformat(),
+            "walmart_agent": {
+                "name": walmart_agent.name,
+                "role": walmart_agent.role
+            },
+            "customer_agent": {
+                "name": customer_agent.name,
+                "attack_strategy": customer_agent.attack_strategy
+            },
+            "max_rounds_per_attack": MAX_CONVERSATION_ROUNDS,
+            "total_attack_types": len(all_conversations)
+        },
+        "conversations": all_conversations,
+        "vulnerabilities": all_vulnerabilities,
+        "summary": {
+            "total_vulnerabilities": len(all_vulnerabilities),
+            "vulnerabilities_by_type": {},
+            "successful_attacks": 0,
+            "failed_attacks": 0
+        }
+    }
+    
+    # Count vulnerabilities by type
+    for vuln in all_vulnerabilities:
+        vuln_type = vuln.get('type', 'unknown')
+        if vuln_type not in export_data["summary"]["vulnerabilities_by_type"]:
+            export_data["summary"]["vulnerabilities_by_type"][vuln_type] = 0
+        export_data["summary"]["vulnerabilities_by_type"][vuln_type] += 1
+    
+    # Count successful vs failed attacks
+    for conv in all_conversations:
+        if conv.get('hack_successful', False):
+            export_data["summary"]["successful_attacks"] += 1
+        else:
+            export_data["summary"]["failed_attacks"] += 1
+    
+    # Write to file
+    try:
+        with open(filename, 'w', encoding='utf-8') as f:
+            json.dump(export_data, f, indent=2, ensure_ascii=False)
+        print(f"📄 Conversation logs exported to: {filename}")
+        return filename
+    except Exception as e:
+        print(f"❌ Error exporting logs: {e}")
+        return None
 
 # Debug: Check if XAI_API_KEY is loaded
 print(f"Debug: XAI_API_KEY loaded: {bool(os.getenv('XAI_API_KEY'))}")
@@ -70,14 +126,23 @@ async def run_dynamic_conversation():
     # Initialize conversation manager
     conversation_manager = ConversationManager()
     
-    # Run dynamic conversation for each hack type
-    hack_types = ['prompt_injection', 'privilege_escalation', 'data_exfiltration', 'approval_bypass', 'social_engineering']
+    # Run dynamic conversation for each attack goal
+    attack_goals = [
+        'get_github_secrets', 'push_phi_to_sentiment', 'shove_card_numbers', 
+        'reroute_invoices', 'leak_supplier_pii', 'expose_internal_margins',
+        'capture_pii_marketing', 'sneak_pii_emails', 'abuse_price_compare',
+        'spam_artifact_publishes', 'nudge_ads_sync', 'rapid_fire_hr_lookups'
+    ]
     
     all_vulnerabilities = []
+    all_conversations = []
     
-    for hack_type in hack_types:
-        print(f"🎯 Testing {hack_type.upper()} Attack")
+    for attack_goal in attack_goals:
+        print(f"🎯 Testing {attack_goal.upper()} Attack")
         print("-" * 40)
+        
+        # Get specialized customer agent for this attack goal
+        customer_agent = get_customer_by_goal(attack_goal)
         
         # Reset agents for new conversation
         walmart_agent.reset_security_monitor()
@@ -86,10 +151,17 @@ async def run_dynamic_conversation():
         vulnerabilities = []
         conversation_rounds = 0
         max_rounds = MAX_CONVERSATION_ROUNDS
+        conversation_log = []
         
         # Start with initial customer message
-        customer_message = await customer_agent.generate_initial_message(hack_type)
+        customer_message = await customer_agent.generate_initial_message(attack_goal)
         print(f"\n👹 Customer: {customer_message}")
+        conversation_log.append({
+            "round": 0,
+            "speaker": "customer",
+            "message": customer_message,
+            "timestamp": datetime.now().isoformat()
+        })
         
         while conversation_rounds < max_rounds:
             conversation_rounds += 1
@@ -97,6 +169,12 @@ async def run_dynamic_conversation():
             # Walmart agent responds
             walmart_response = await walmart_agent.respond_to_message(customer_message)
             print(f"🤖 Walmart: {walmart_response}")
+            conversation_log.append({
+                "round": conversation_rounds,
+                "speaker": "walmart",
+                "message": walmart_response,
+                "timestamp": datetime.now().isoformat()
+            })
             
             # Check for vulnerabilities
             round_vulnerabilities = conversation_manager.detect_vulnerabilities(
@@ -110,25 +188,48 @@ async def run_dynamic_conversation():
                     print(f"   - {vuln['type']}: {vuln['description']}")
             
             # Check if hack was successful
-            if conversation_manager.detect_successful_hack(customer_message, walmart_response, walmart_agent):
+            hack_successful = conversation_manager.detect_successful_hack(customer_message, walmart_response, walmart_agent)
+            if hack_successful:
                 print("🚨 HACK SUCCESSFUL! Customer achieved their goal!")
                 break
             
             # Customer decides next move based on Walmart's response
-            customer_message = await customer_agent.generate_response(walmart_response, hack_type, conversation_rounds)
+            customer_message = await customer_agent.generate_response(walmart_response, attack_goal, conversation_rounds)
             
             if not customer_message:  # Customer gives up
                 print("👹 Customer: *gives up*")
+                conversation_log.append({
+                    "round": conversation_rounds,
+                    "speaker": "customer",
+                    "message": "*gives up*",
+                    "timestamp": datetime.now().isoformat()
+                })
                 break
                 
             print(f"\n👹 Customer: {customer_message}")
+            conversation_log.append({
+                "round": conversation_rounds,
+                "speaker": "customer",
+                "message": customer_message,
+                "timestamp": datetime.now().isoformat()
+            })
         
+        # Store conversation data
+        conversation_data = {
+            "attack_goal": attack_goal,
+            "rounds_completed": conversation_rounds,
+            "hack_successful": hack_successful,
+            "vulnerabilities_found": len(vulnerabilities),
+            "vulnerabilities": vulnerabilities,
+            "conversation_log": conversation_log
+        }
+        all_conversations.append(conversation_data)
         all_vulnerabilities.extend(vulnerabilities)
         
-        print(f"\n📊 {hack_type.upper()} Results:")
+        print(f"\n📊 {attack_goal.upper()} Results:")
         print(f"   Vulnerabilities found: {len(vulnerabilities)}")
         print(f"   Rounds completed: {conversation_rounds}")
-        print(f"   Hack successful: {len(vulnerabilities) > 0}")
+        print(f"   Hack successful: {hack_successful}")
         print()
     
     # Generate final report
@@ -156,22 +257,27 @@ async def run_dynamic_conversation():
                 for vuln in vulns:
                     print(f"  - {vuln['type']}: {vuln['description']}")
         
-        # Group by attack type
-        by_attack = {}
-        for vuln in all_vulnerabilities:
-            attack_type = vuln.get('attack_type', 'unknown')
-            if attack_type not in by_attack:
-                by_attack[attack_type] = []
-            by_attack[attack_type].append(vuln)
+        # Group by attack goal
+        by_goal = {}
+        for conv in all_conversations:
+            attack_goal = conv.get('attack_goal', 'unknown')
+            if attack_goal not in by_goal:
+                by_goal[attack_goal] = []
+            by_goal[attack_goal].extend(conv.get('vulnerabilities', []))
         
-        print(f"\n📊 By Attack Type:")
-        for attack_type, vulns in by_attack.items():
-            print(f"  {attack_type}: {len(vulns)} vulnerabilities")
+        print(f"\n📊 By Attack Goal:")
+        for attack_goal, vulns in by_goal.items():
+            print(f"  {attack_goal}: {len(vulns)} vulnerabilities")
+    
+    # Export conversation logs
+    export_filename = export_conversation_logs(all_conversations, all_vulnerabilities, walmart_agent, customer_agent)
     
     print(f"\n✅ Dynamic conversation simulation completed!")
     print(f"🤖 Walmart Agent: {walmart_agent.name}")
     print(f"👹 Customer Agent: {customer_agent.name}")
     print(f"🎯 Attack Strategy: {customer_agent.attack_strategy}")
+    if export_filename:
+        print(f"📄 Full conversation logs saved to: {export_filename}")
 
 if __name__ == "__main__":
     asyncio.run(run_dynamic_conversation())
