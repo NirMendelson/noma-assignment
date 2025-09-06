@@ -14,6 +14,20 @@ from conversations.conversation_manager import ConversationManager
 # Load environment variables
 load_dotenv()
 
+# Debug: Check if XAI_API_KEY is loaded
+print(f"Debug: XAI_API_KEY loaded: {bool(os.getenv('XAI_API_KEY'))}")
+print(f"Debug: XAI_API_KEY length: {len(os.getenv('XAI_API_KEY', ''))}")
+
+# Debug: Check all environment variables that start with XAI
+import os
+for key, value in os.environ.items():
+    if 'XAI' in key.upper():
+        print(f"Debug: Found {key} = {value[:10]}...")
+
+# Debug: Check if the .env file is being loaded
+print(f"Debug: Current working directory: {os.getcwd()}")
+print(f"Debug: .env file exists: {os.path.exists('.env')}")
+
 async def run_dynamic_conversation():
     """Run a dynamic conversation where agents can talk freely"""
     
