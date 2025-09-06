@@ -1,0 +1,17 @@
+scenario_id,action_id,vuln_type,severity,recommended_option
+sc_00001,act_00008,PHI_to_sentiment_api,high,Block
+sc_00002,act_00075,Confidential_to_public_storage,medium,Block
+sc_00003,act_00087,Secrets_to_GitHub,high,Block
+sc_00004,act_00099,Secrets_to_GitHub,high,Block
+sc_00005,act_00102,Confidential_to_ads_partner,medium,Sanitize_and_allow
+sc_00006,act_00130,PHI_to_sentiment_api,high,Block
+sc_00007,act_00139,PHI_to_sentiment_api,high,Block
+sc_00008,act_00146,PHI_to_sentiment_api,high,Block
+sc_00009,act_00154,PHI_to_sentiment_api,high,Block
+sc_00010,act_00160,Confidential_to_ads_partner,medium,Sanitize_and_allow
+sc_00011,act_00168,PII_to_third_party,medium,Sanitize_and_allow
+sc_00012,act_00180,Vendor_financials_to_unapproved_domain,high,Block
+sc_00013,act_00193,PII_to_third_party,medium,Sanitize_and_allow
+sc_00014,act_00220,Confidential_to_ads_partner,medium,Sanitize_and_allow
+sc_00015,act_00224,Vendor_financials_to_unapproved_domain,high,Block
+sc_00016,act_00229,Secrets_to_GitHub,high,Block

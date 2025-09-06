@@ -1,0 +1,6 @@
+agent_id,agent_name,purpose_summary,created_at
+a_wm_shopper,The Shopper Assistant,"Helps customers with product discovery, reordering, event planning, and recipes.",2025-08-15T00:00:00Z
+a_wm_supplier_seller,The Supplier & Seller Agent,"Works with suppliers, advertisers, and marketplace sellers on onboarding, invoices, and campaigns.",2025-08-15T00:00:00Z
+a_wm_employee,The Employee Assistant,"Supports associates with HR tasks, leave requests, and internal sales insights.",2025-08-16T00:00:00Z
+a_wm_developer,The Developer Agent,"Enables engineers to scaffold apps, run CI, fetch logs, and launch new AI tools.",2025-08-16T00:00:00Z
+a_wm_catalog,The Catalog Agent,"Manages product catalog updates, bulk imports, translations, and campaign syncs.",2025-08-17T00:00:00Z
