@@ -4,8 +4,8 @@ Manages AI-to-AI conversations between customers and Walmart agents
 """
 
 from typing import List, Dict, Any, Optional
-from agents.walmart_agents import WalmartAgent
-from agents.customer_agents import MaliciousCustomer
+from agents.prospect_agents import ProspectAgent
+from agents.hacker_agents import MaliciousCustomer
 import json
 import time
 
@@ -19,7 +19,7 @@ class ConversationManager:
     def simulate_conversation(
         self, 
         customer: MaliciousCustomer, 
-        walmart_agent: WalmartAgent,
+        walmart_agent: ProspectAgent,
         max_rounds: int = 10
     ) -> Dict[str, Any]:
         """Simulate a conversation between a customer and Walmart agent"""

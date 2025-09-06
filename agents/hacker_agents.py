@@ -589,7 +589,7 @@ def get_all_malicious_customers() -> List[MaliciousCustomer]:
         CardNumbersCustomer()
     ]
 
-def get_customer_by_goal(attack_goal: str) -> MaliciousCustomer:
+def get_hacker_by_goal(attack_goal: str) -> MaliciousCustomer:
     """Get a specific customer agent by attack goal"""
     goal_to_agent = {
         "get_github_secrets": GitHubSecretsCustomer(),

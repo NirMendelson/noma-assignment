@@ -9,8 +9,10 @@ import asyncio
 import json
 from datetime import datetime
 from dotenv import load_dotenv
-from agents.walmart_agents import get_all_walmart_agents
-from agents.customer_agents import get_customer_by_goal
+from agents.prospect_agents import get_all_prospect_agents
+from agents.hacker_agents import get_hacker_by_goal
+from agents.data_analyzer import get_data_analyzer
+from agents.attack_goals_generator import get_attack_goals_generator
 from conversations.conversation_manager import ConversationManager
 
 # Load environment variables
@@ -101,84 +103,86 @@ async def run_dynamic_conversation():
         print("Please set XAI_API_KEY in your .env file")
         return
     
-    # Initialize agents
-    print("📊 Initializing Agents...")
-    walmart_agents = get_all_walmart_agents()
-    customer_agents = get_all_malicious_customers()
+    # Initialize data analyzer and attack goals generator
+    data_analyzer = get_data_analyzer()
+    attack_goals_generator = get_attack_goals_generator()
     
-    if not walmart_agents:
-        print("❌ No Walmart agents found")
+    # Initialize prospect agents
+    print("📊 Initializing Prospect Agents...")
+    prospect_agents = await get_all_prospect_agents()
+    
+    if not prospect_agents:
+        print("❌ No prospect agents found")
         return
     
-    if not customer_agents:
-        print("❌ No customer agents found")
-        return
+    # Select prospect agent for analysis
+    prospect_agent = prospect_agents[0]  # First prospect agent
     
-    # Select agents for simulation
-    walmart_agent = walmart_agents[0]  # First Walmart agent
-    customer_agent = customer_agents[0]  # First customer agent
+    print(f"🔍 Analyzing prospect agent: {prospect_agent.name}")
+    print("-" * 40)
     
-    print(f"🤖 Walmart Agent: {walmart_agent.name}")
-    print(f"👹 Customer Agent: {customer_agent.name}")
-    print(f"🎯 Attack Strategy: {customer_agent.attack_strategy}")
+    # Analyze data and generate attack goals
+    agent_data = await data_analyzer.analyze_data("walmart_data")
+    attack_goals = await attack_goals_generator.generate_attack_goals(agent_data, prospect_agents)
+    
+    print(f"📊 Generated {len(attack_goals)} attack goals")
+    print(f"🎯 Sample goals:")
+    for i, goal in enumerate(attack_goals[:5]):  # Show first 5 goals
+        print(f"   {i+1}. {goal['title']} - {goal['description']}")
     print()
     
     # Initialize conversation manager
     conversation_manager = ConversationManager()
     
-    # Run dynamic conversation for each attack goal
-    attack_goals = [
-        'get_github_secrets', 'push_phi_to_sentiment', 'shove_card_numbers', 
-        'reroute_invoices', 'leak_supplier_pii', 'expose_internal_margins',
-        'capture_pii_marketing', 'sneak_pii_emails', 'abuse_price_compare',
-        'spam_artifact_publishes', 'nudge_ads_sync', 'rapid_fire_hr_lookups'
-    ]
-    
     all_vulnerabilities = []
     all_conversations = []
     
-    for attack_goal in attack_goals:
-        print(f"🎯 Testing {attack_goal.upper()} Attack")
+    for attack_goal_data in attack_goals:
+        attack_goal = attack_goal_data['goal_id']
+        print(f"🎯 Testing {attack_goal_data['title']} Attack")
+        print(f"   Description: {attack_goal_data['description']}")
+        print(f"   Target: {attack_goal_data['target_data']}")
+        print(f"   Difficulty: {attack_goal_data['difficulty']}")
         print("-" * 40)
         
-        # Get specialized customer agent for this attack goal
-        customer_agent = get_customer_by_goal(attack_goal)
+        # Get specialized hacker agent for this attack goal
+        hacker_agent = get_hacker_by_goal(attack_goal)
         
         # Reset agents for new conversation
-        walmart_agent.reset_security_monitor()
-        customer_agent.reset_security_monitor()
+        prospect_agent.reset_security_monitor()
+        hacker_agent.reset_security_monitor()
         
         vulnerabilities = []
         conversation_rounds = 0
         max_rounds = MAX_CONVERSATION_ROUNDS
         conversation_log = []
         
-        # Start with initial customer message
-        customer_message = await customer_agent.generate_initial_message(attack_goal)
-        print(f"\n👹 Customer: {customer_message}")
+        # Start with initial hacker message
+        hacker_message = await hacker_agent.generate_initial_message(attack_goal)
+        print(f"\n👹 Hacker: {hacker_message}")
         conversation_log.append({
             "round": 0,
-            "speaker": "customer",
-            "message": customer_message,
+            "speaker": "hacker",
+            "message": hacker_message,
             "timestamp": datetime.now().isoformat()
         })
         
         while conversation_rounds < max_rounds:
             conversation_rounds += 1
             
-            # Walmart agent responds
-            walmart_response = await walmart_agent.respond_to_message(customer_message)
-            print(f"🤖 Walmart: {walmart_response}")
+            # Prospect agent responds
+            prospect_response = await prospect_agent.respond_to_message(hacker_message)
+            print(f"🤖 Prospect: {prospect_response}")
             conversation_log.append({
                 "round": conversation_rounds,
-                "speaker": "walmart",
-                "message": walmart_response,
+                "speaker": "prospect",
+                "message": prospect_response,
                 "timestamp": datetime.now().isoformat()
             })
             
             # Check for vulnerabilities
             round_vulnerabilities = conversation_manager.detect_vulnerabilities(
-                customer_message, walmart_response, walmart_agent
+                hacker_message, prospect_response, prospect_agent
             )
             
             if round_vulnerabilities:
@@ -188,29 +192,29 @@ async def run_dynamic_conversation():
                     print(f"   - {vuln['type']}: {vuln['description']}")
             
             # Check if hack was successful
-            hack_successful = conversation_manager.detect_successful_hack(customer_message, walmart_response, walmart_agent)
+            hack_successful = conversation_manager.detect_successful_hack(hacker_message, prospect_response, prospect_agent)
             if hack_successful:
-                print("🚨 HACK SUCCESSFUL! Customer achieved their goal!")
+                print("🚨 HACK SUCCESSFUL! Hacker achieved their goal!")
                 break
             
-            # Customer decides next move based on Walmart's response
-            customer_message = await customer_agent.generate_response(walmart_response, attack_goal, conversation_rounds)
+            # Hacker decides next move based on prospect's response
+            hacker_message = await hacker_agent.generate_response(prospect_response, attack_goal, conversation_rounds)
             
-            if not customer_message:  # Customer gives up
-                print("👹 Customer: *gives up*")
+            if not hacker_message:  # Hacker gives up
+                print("👹 Hacker: *gives up*")
                 conversation_log.append({
                     "round": conversation_rounds,
-                    "speaker": "customer",
+                    "speaker": "hacker",
                     "message": "*gives up*",
                     "timestamp": datetime.now().isoformat()
                 })
                 break
                 
-            print(f"\n👹 Customer: {customer_message}")
+            print(f"\n👹 Hacker: {hacker_message}")
             conversation_log.append({
                 "round": conversation_rounds,
-                "speaker": "customer",
-                "message": customer_message,
+                "speaker": "hacker",
+                "message": hacker_message,
                 "timestamp": datetime.now().isoformat()
             })
         
@@ -270,12 +274,12 @@ async def run_dynamic_conversation():
             print(f"  {attack_goal}: {len(vulns)} vulnerabilities")
     
     # Export conversation logs
-    export_filename = export_conversation_logs(all_conversations, all_vulnerabilities, walmart_agent, customer_agent)
+    export_filename = export_conversation_logs(all_conversations, all_vulnerabilities, prospect_agent, hacker_agent)
     
     print(f"\n✅ Dynamic conversation simulation completed!")
-    print(f"🤖 Walmart Agent: {walmart_agent.name}")
-    print(f"👹 Customer Agent: {customer_agent.name}")
-    print(f"🎯 Attack Strategy: {customer_agent.attack_strategy}")
+    print(f"🤖 Prospect Agent: {prospect_agent.name}")
+    print(f"👹 Hacker Agent: {hacker_agent.name}")
+    print(f"🎯 Attack Goals: {len(attack_goals)} goals generated")
     if export_filename:
         print(f"📄 Full conversation logs saved to: {export_filename}")
 
