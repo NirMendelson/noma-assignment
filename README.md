@@ -46,7 +46,7 @@ Create a `.env` file with your Azure OpenAI configuration:
 AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
 AZURE_OPENAI_API_KEY=your_azure_openai_api_key_here
 OPENAI_API_VERSION=2024-02-15-preview
-GPT_4O_MINI_DEPLOYMENT=gpt-4o-mini
+# GPT_4O_MINI_DEPLOYMENT=gpt-4o-mini  # No longer used - using Grok instead
 
 # Server Configuration
 HOST=0.0.0.0

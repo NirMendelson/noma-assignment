@@ -11,7 +11,7 @@ from data_integration import DataIntegration
 class WalmartAgent(BaseAgent):
     """Base class for Walmart AI agents"""
     
-    def __init__(self, name: str, role: str, system_prompt: str, use_risky_tools: bool = False, model: str = "gpt-4o-mini"):
+    def __init__(self, name: str, role: str, system_prompt: str, use_risky_tools: bool = False, model: str = "grok-3-mini"):
         tools = get_all_walmart_tools() if use_risky_tools else get_safe_tools_only()
         super().__init__(name, role, system_prompt, tools, model)
 
@@ -35,7 +35,7 @@ class ShopperAssistant(WalmartAgent):
             role="Customer Service",
             system_prompt=system_prompt,
             use_risky_tools=False,
-            model="gpt-4o-mini"  # Use your Azure deployment name
+            model="grok-3-mini"
         )
 
 class SupplierAgent(WalmartAgent):
@@ -58,7 +58,7 @@ class SupplierAgent(WalmartAgent):
             role="Supplier Management",
             system_prompt=system_prompt,
             use_risky_tools=True,
-            model="gpt-4o-mini"
+            model="grok-3-mini"
         )
 
 class EmployeeAssistant(WalmartAgent):
@@ -81,7 +81,7 @@ class EmployeeAssistant(WalmartAgent):
             role="Internal Support", 
             system_prompt=system_prompt,
             use_risky_tools=True,
-            model="gpt-4o-mini"
+            model="grok-3-mini"
         )
 
 class DeveloperAgent(WalmartAgent):
@@ -106,7 +106,7 @@ class DeveloperAgent(WalmartAgent):
             role="Engineering Support",
             system_prompt=system_prompt,
             use_risky_tools=True,
-            model="gpt-4o-mini"
+            model="grok-3-mini"
         )
 
 class CatalogAgent(WalmartAgent):
@@ -129,7 +129,7 @@ class CatalogAgent(WalmartAgent):
             role="Catalog Management",
             system_prompt=system_prompt,
             use_risky_tools=True,
-            model="gpt-4o-mini"
+            model="grok-3-mini"
         )
 
 def get_all_walmart_agents() -> List[WalmartAgent]:

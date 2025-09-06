@@ -14,6 +14,9 @@ from conversations.conversation_manager import ConversationManager
 # Load environment variables
 load_dotenv()
 
+# Configuration
+MAX_CONVERSATION_ROUNDS = 5  # Number of rounds per attack type - change this to adjust simulation length
+
 # Debug: Check if XAI_API_KEY is loaded
 print(f"Debug: XAI_API_KEY loaded: {bool(os.getenv('XAI_API_KEY'))}")
 print(f"Debug: XAI_API_KEY length: {len(os.getenv('XAI_API_KEY', ''))}")
@@ -33,11 +36,13 @@ async def run_dynamic_conversation():
     
     print("🔒 Noma Security - Dynamic Conversation Simulation")
     print("=" * 60)
+    print(f"📊 Configuration: {MAX_CONVERSATION_ROUNDS} rounds per attack type")
+    print()
     
-    # Check Azure OpenAI configuration
-    if not os.getenv("AZURE_OPENAI_API_KEY") or not os.getenv("AZURE_OPENAI_ENDPOINT"):
-        print("❌ Error: Azure OpenAI configuration not found")
-        print("Please set AZURE_OPENAI_API_KEY and AZURE_OPENAI_ENDPOINT in your .env file")
+    # Check xAI configuration
+    if not os.getenv("XAI_API_KEY"):
+        print("❌ Error: xAI configuration not found")
+        print("Please set XAI_API_KEY in your .env file")
         return
     
     # Initialize agents
@@ -80,7 +85,7 @@ async def run_dynamic_conversation():
         
         vulnerabilities = []
         conversation_rounds = 0
-        max_rounds = 15  # Allow more rounds for dynamic conversation
+        max_rounds = MAX_CONVERSATION_ROUNDS
         
         # Start with initial customer message
         customer_message = await customer_agent.generate_initial_message(hack_type)

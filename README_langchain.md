@@ -58,14 +58,10 @@ main.py                    # Main simulation runner
 pip install -r requirements.txt
 ```
 
-2. **Set Azure OpenAI Configuration**
+2. **Set xAI Configuration**
 ```bash
 # Your .env file should contain:
-AZURE_OPENAI_ENDPOINT=your_azure_endpoint
-AZURE_OPENAI_API_KEY=your_azure_api_key
-OPENAI_API_VERSION=2024-02-15-preview
-GPT_4O_MINI_DEPLOYMENT=gpt-4o-mini
-GPT_4O_DEPLOYMENT_NAME=gpt-4o
+XAI_API_KEY=your_xai_api_key_here
 ```
 
 3. **Run the Platform**

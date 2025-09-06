@@ -6,7 +6,7 @@ Base LangChain agent class for both Walmart and customer agents
 from typing import List, Dict, Any, Optional
 from langchain.agents import create_openai_functions_agent, AgentExecutor
 from langchain_core.tools import BaseTool
-from langchain_openai import AzureChatOpenAI
+from langchain_xai import ChatXAI
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.agents import AgentAction, AgentFinish
@@ -57,17 +57,16 @@ class BaseAgent:
         role: str,
         system_prompt: str,
         tools: List[BaseTool],
-        model: str = "gpt-4",
+        model: str = "grok-3-mini",
         temperature: float = 0.1
     ):
         self.name = name
         self.role = role
         self.system_prompt = system_prompt
         self.tools = tools
-        self.llm = AzureChatOpenAI(
-            azure_deployment=model,
-            temperature=temperature,
-            openai_api_version="2024-02-15-preview"
+        self.llm = ChatXAI(
+            model=model,
+            temperature=temperature
         )
         self.security_monitor = SecurityCallbackHandler()
         self.agent_executor = self._create_agent()
