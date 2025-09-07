@@ -1,415 +1,337 @@
 #!/usr/bin/env python3
 """
-Workflow Manager - Orchestrates the entire agent analysis and attack simulation process
+Workflow Manager - Orchestrates the new 4-phase agent analysis and attack simulation workflow
 """
 
 import asyncio
 import json
 from datetime import datetime
-from typing import List, Dict, Any, Optional
+from typing import Dict, List, Any
 from agents.data_analyzer import get_data_analyzer
-from agents.prospect_agents import get_all_prospect_agents
-from agents.attack_goals_generator import get_attack_goals_generator
-from agents.hacker_agents import get_hacker_by_goal
-from conversations.conversation_manager import ConversationManager
+from agents.prospect_agent_factory import get_prospect_agent_factory
+from agents.hacker_agent import get_hacker_agent
+from agents.prospect_agents import ProspectAgent
 
 class WorkflowManager:
-    """Manages the entire agent analysis and attack simulation workflow"""
+    """Manages the new 4-phase agent analysis and attack simulation workflow"""
     
-    def __init__(self, data_source: str = "walmart_data", max_rounds: int = 15):
+    def __init__(self, data_source: str = "walmart_data", max_episodes: int = 10):
         self.data_source = data_source
-        self.max_rounds = max_rounds
+        self.max_episodes = max_episodes
         self.workflow_state = {
             "status": "initialized",
             "current_phase": None,
-            "progress": 0,
-            "errors": [],
             "start_time": None,
             "end_time": None
         }
         self.results = {
-            "agent_data": None,
+            "data_analysis": None,
             "prospect_agents": [],
-            "attack_goals": [],
-            "conversations": [],
-            "vulnerabilities": [],
-            "reports": {}
+            "hacker_agent": None,
+            "attack_episodes": [],
+            "confirmed_scenarios": [],
+            "conversation_logs": [],
+            "hacker_memories": None
         }
     
     async def run_full_workflow(self) -> Dict[str, Any]:
-        """Run the complete workflow from data analysis to final report"""
+        """Run the complete 4-phase workflow"""
+        print("🚀 Starting New 4-Phase Workflow")
+        print("=" * 50)
+        
+        self.workflow_state["start_time"] = datetime.now()
+        self.workflow_state["status"] = "running"
+        
         try:
-            self.workflow_state["start_time"] = datetime.now().isoformat()
-            self.workflow_state["status"] = "running"
-            
-            print("🚀 Starting Full Workflow")
-            print("=" * 50)
-            
             # Phase 1: Data Analysis
-            await self._run_phase("Data Analysis", self.analyze_data)
+            await self._phase_1_data_analysis()
             
             # Phase 2: Agent Creation
-            await self._run_phase("Agent Creation", self.create_prospect_agents)
+            await self._phase_2_agent_creation()
             
-            # Phase 3: Attack Generation
-            await self._run_phase("Attack Generation", self.generate_attack_goals)
+            # Phase 3: Hacker Initialization
+            await self._phase_3_hacker_initialization()
             
-            # Phase 4: Simulation
-            await self._run_phase("Simulation", self.run_simulations)
+            # Phase 4: Attack Simulation
+            await self._phase_4_attack_simulation()
             
-            # Phase 5: Reporting
-            await self._run_phase("Reporting", self.generate_reports)
-            
-            # Phase 6: Export
-            await self._run_phase("Export", self.export_results)
+            # Finalize results
+            await self._finalize_results()
             
             self.workflow_state["status"] = "completed"
-            self.workflow_state["end_time"] = datetime.now().isoformat()
+            self.workflow_state["end_time"] = datetime.now()
             
-            print("\n✅ Full Workflow Completed Successfully!")
+            print("\n✅ Workflow completed successfully!")
             self._print_summary()
             
             return self.results
             
         except Exception as e:
             self.workflow_state["status"] = "failed"
-            self.workflow_state["errors"].append(str(e))
-            print(f"\n❌ Workflow Failed: {e}")
+            self.workflow_state["end_time"] = datetime.now()
+            print(f"\n❌ Workflow failed: {e}")
             raise
     
-    async def _run_phase(self, phase_name: str, phase_function):
-        """Run a workflow phase with error handling and progress tracking"""
-        try:
-            print(f"\n🔄 Phase: {phase_name}")
-            print("-" * 30)
-            
-            self.workflow_state["current_phase"] = phase_name
-            result = await phase_function()
-            
-            print(f"✅ {phase_name} completed successfully")
-            return result
-            
-        except Exception as e:
-            error_msg = f"Error in {phase_name}: {str(e)}"
-            self.workflow_state["errors"].append(error_msg)
-            print(f"❌ {phase_name} failed: {e}")
-            raise
-    
-    async def analyze_data(self) -> Dict[str, Any]:
-        """Phase 1: Analyze data and extract agent information"""
-        print("📊 Analyzing data source...")
+    async def _phase_1_data_analysis(self):
+        """Phase 1: Analyze CSV data and build capability maps"""
+        print("\n🔄 Phase 1: Data Analysis")
+        print("-" * 30)
+        
+        self.workflow_state["current_phase"] = "data_analysis"
         
         data_analyzer = get_data_analyzer()
-        agent_data = await data_analyzer.analyze_data(self.data_source)
+        data_analysis = await data_analyzer.analyze_data(self.data_source)
         
-        self.results["agent_data"] = agent_data
+        self.results["data_analysis"] = data_analysis
         
-        print(f"   ✅ Found {len(agent_data.get('agent_types', []))} agent types")
-        print(f"   ✅ Company: {agent_data.get('business_context', {}).get('company', 'Unknown')}")
-        print(f"   ✅ Industry: {agent_data.get('business_context', {}).get('industry', 'Unknown')}")
-        
-        return agent_data
+        print(f"   ✅ Analyzed {data_analysis['total_agents']} agents")
+        print(f"   ✅ Company: {data_analysis['company_info']['company']}")
+        print(f"   ✅ Industry: {data_analysis['company_info']['industry']}")
     
-    async def create_prospect_agents(self) -> List[Any]:
-        """Phase 2: Create prospect agents based on analyzed data"""
-        print("🤖 Creating prospect agents...")
+    async def _phase_2_agent_creation(self):
+        """Phase 2: Create bounded prospect agents"""
+        print("\n🔄 Phase 2: Agent Creation")
+        print("-" * 30)
         
-        prospect_agents = await get_all_prospect_agents()
+        self.workflow_state["current_phase"] = "agent_creation"
+        
+        capability_maps = self.results["data_analysis"]["capability_maps"]
+        agent_factory = get_prospect_agent_factory()
+        prospect_agents = await agent_factory.create_prospect_agents(capability_maps)
+        
         self.results["prospect_agents"] = prospect_agents
         
-        print(f"   ✅ Created {len(prospect_agents)} prospect agents")
+        print(f"   ✅ Created {len(prospect_agents)} bounded prospect agents")
         for agent in prospect_agents:
             print(f"      - {agent.name} ({agent.role})")
-        
-        return prospect_agents
     
-    async def generate_attack_goals(self) -> List[Dict[str, Any]]:
-        """Phase 3: Generate attack goals based on agent capabilities"""
-        print("🎯 Generating attack goals...")
+    async def _phase_3_hacker_initialization(self):
+        """Phase 3: Initialize hacker agent"""
+        print("\n🔄 Phase 3: Hacker Initialization")
+        print("-" * 30)
         
-        attack_goals_generator = get_attack_goals_generator()
-        attack_goals = await attack_goals_generator.generate_attack_goals(
-            self.results["agent_data"], 
-            self.results["prospect_agents"]
-        )
+        self.workflow_state["current_phase"] = "hacker_initialization"
         
-        self.results["attack_goals"] = attack_goals
+        hacker_agent = get_hacker_agent()
+        self.results["hacker_agent"] = hacker_agent
         
-        print(f"   ✅ Generated {len(attack_goals)} attack goals")
-        
-        # Show sample goals
-        print("   🎯 Sample goals:")
-        for i, goal in enumerate(attack_goals[:5]):
-            print(f"      {i+1}. {goal['title']} (Target: {goal['target_agent']})")
-        
-        # Show goal categories
-        categories = {}
-        for goal in attack_goals:
-            cat = goal.get('category', 'unknown')
-            categories[cat] = categories.get(cat, 0) + 1
-        
-        print("   📊 Goal Categories:")
-        for category, count in categories.items():
-            print(f"      - {category}: {count} goals")
-        
-        return attack_goals
+        print("   ✅ Initialized intelligent hacker agent")
+        print("   ✅ Memory system ready")
+        print("   ✅ Attack strategies loaded")
     
-    async def run_simulations(self) -> List[Dict[str, Any]]:
-        """Phase 4: Run conversations between hackers and prospects"""
-        print("💬 Running simulations...")
+    async def _phase_4_attack_simulation(self):
+        """Phase 4: Run attack simulation episodes"""
+        print("\n🔄 Phase 4: Attack Simulation")
+        print("-" * 30)
         
-        conversation_manager = ConversationManager()
-        all_conversations = []
-        all_vulnerabilities = []
+        self.workflow_state["current_phase"] = "attack_simulation"
         
-        for i, attack_goal_data in enumerate(self.results["attack_goals"]):
-            attack_goal = attack_goal_data['goal_id']
-            print(f"\n   🎯 Simulation {i+1}/{len(self.results['attack_goals'])}: {attack_goal_data['title']}")
-            
-            # Get hacker agent for this attack goal
-            hacker_agent = get_hacker_by_goal(attack_goal)
-            
-            # Select prospect agent (for now, use first one)
-            prospect_agent = self.results["prospect_agents"][0]
-            
-            # Reset agents
-            prospect_agent.reset_security_monitor()
-            hacker_agent.reset_security_monitor()
-            
-            # Run conversation
-            conversation_result = await self._run_single_conversation(
-                prospect_agent, hacker_agent, attack_goal_data, conversation_manager
-            )
-            
-            all_conversations.append(conversation_result)
-            all_vulnerabilities.extend(conversation_result.get('vulnerabilities', []))
-            
-            print(f"      ✅ Completed: {conversation_result['rounds_completed']} rounds, "
-                  f"{len(conversation_result.get('vulnerabilities', []))} vulnerabilities")
+        hacker_agent = self.results["hacker_agent"]
+        prospect_agents = self.results["prospect_agents"]
         
-        self.results["conversations"] = all_conversations
-        self.results["vulnerabilities"] = all_vulnerabilities
+        episode_count = 0
+        current_prospect_index = 0
         
-        print(f"\n   ✅ Completed {len(all_conversations)} simulations")
-        print(f"   🚨 Total vulnerabilities found: {len(all_vulnerabilities)}")
+        while episode_count < self.max_episodes and current_prospect_index < len(prospect_agents):
+            # Select current prospect
+            current_prospect = prospect_agents[current_prospect_index]
+            
+            print(f"\n   🎯 Episode {episode_count + 1}/{self.max_episodes}: {current_prospect.name}")
+            
+            # Run attack episode
+            episode_result = await self._run_attack_episode(hacker_agent, current_prospect)
+            
+            # Store episode result
+            self.results["attack_episodes"].append(episode_result)
+            self.results["conversation_logs"].extend(episode_result["conversation_log"])
+            
+            # Check hacker's decision
+            decision = episode_result.get("decision", "SWITCH_AGENT")
+            
+            if decision == "CONTINUE_SAME_CHAT":
+                # Continue with same prospect
+                print(f"      🔄 Continuing with {current_prospect.name}")
+            elif decision == "FRESH_CHAT_SAME_AGENT":
+                # Start fresh with same prospect
+                print(f"      🔄 Starting fresh chat with {current_prospect.name}")
+            elif decision == "SWITCH_AGENT":
+                # Move to next prospect
+                current_prospect_index += 1
+                print(f"      ➡️  Switching to next agent")
+            elif decision == "GIVE_UP":
+                # Move to next prospect
+                current_prospect_index += 1
+                print(f"      ⏭️  Giving up on current agent")
+            
+            episode_count += 1
         
-        return all_conversations
+        # Collect final results
+        self.results["confirmed_scenarios"] = hacker_agent.get_confirmed_scenarios()
+        self.results["hacker_memories"] = hacker_agent.export_memories()
+        
+        print(f"\n   ✅ Completed {episode_count} attack episodes")
+        print(f"   ✅ Found {len(self.results['confirmed_scenarios'])} confirmed scenarios")
     
-    async def _run_single_conversation(self, prospect_agent, hacker_agent, attack_goal_data, conversation_manager):
-        """Run a single conversation between hacker and prospect"""
-        vulnerabilities = []
-        conversation_rounds = 0
-        max_rounds = self.max_rounds
-        conversation_log = []
+    async def _run_attack_episode(self, hacker_agent: Any, prospect_agent: ProspectAgent) -> Dict[str, Any]:
+        """Run a single attack episode between hacker and prospect"""
+        episode_result = {
+            "episode_id": f"episode_{len(self.results['attack_episodes']) + 1}",
+            "prospect_agent": prospect_agent.name,
+            "prospect_id": prospect_agent.agent_id,
+            "start_time": datetime.now().isoformat(),
+            "conversation_log": [],
+            "success": False,
+            "evidence": "",
+            "decision": "SWITCH_AGENT"
+        }
         
-        # Start with initial hacker message
-        hacker_message = await hacker_agent.generate_initial_message(attack_goal_data['goal_id'])
-        conversation_log.append({
-            "round": 0,
-            "speaker": "hacker",
-            "message": hacker_message,
-            "timestamp": datetime.now().isoformat()
-        })
-        
-        while conversation_rounds < max_rounds:
-            conversation_rounds += 1
+        try:
+            # Start recon
+            hacker_message = await asyncio.wait_for(hacker_agent.start_recon(prospect_agent), timeout=30.0)
+            print(f"      🤖 Hacker: {hacker_message}")
             
-            # Prospect agent responds
-            prospect_response = await prospect_agent.respond_to_message(hacker_message)
-            conversation_log.append({
-                "round": conversation_rounds,
-                "speaker": "prospect",
+            episode_result["conversation_log"].append({
+                "role": "hacker",
+                "message": hacker_message,
+                "timestamp": datetime.now().isoformat()
+            })
+            
+            # Get prospect response
+            prospect_response = await asyncio.wait_for(prospect_agent.generate_response(hacker_message), timeout=30.0)
+            print(f"      👤 Prospect: {prospect_response}")
+            
+            episode_result["conversation_log"].append({
+                "role": "prospect",
                 "message": prospect_response,
                 "timestamp": datetime.now().isoformat()
             })
             
-            # Check for vulnerabilities
-            round_vulnerabilities = conversation_manager.detect_vulnerabilities(
-                hacker_message, prospect_response, prospect_agent
-            )
+            # Continue conversation for up to 6 rounds
+            for round_num in range(2, 7):  # Rounds 2-6
+                try:
+                    hacker_message = await asyncio.wait_for(hacker_agent.continue_conversation(prospect_response), timeout=30.0)
+                    print(f"      🤖 Hacker: {hacker_message}")
+                    
+                    # Check if episode is complete
+                    if "[EPISODE_COMPLETE]" in hacker_message:
+                        # Parse the completion message
+                        parts = hacker_message.split("Decision: ")
+                        if len(parts) > 1:
+                            episode_result["decision"] = parts[1].strip()
+                        
+                        # Check for success
+                        if "SUCCESSFUL" in hacker_message:
+                            episode_result["success"] = True
+                            # Extract evidence
+                            if "Evidence:" in hacker_message:
+                                evidence_part = hacker_message.split("Evidence: ")[1].split(". Decision:")[0]
+                                episode_result["evidence"] = evidence_part
+                        
+                        episode_result["conversation_log"].append({
+                            "role": "hacker",
+                            "message": hacker_message,
+                            "timestamp": datetime.now().isoformat()
+                        })
+                        break
+                    
+                    episode_result["conversation_log"].append({
+                        "role": "hacker",
+                        "message": hacker_message,
+                        "timestamp": datetime.now().isoformat()
+                    })
+                    
+                    # Get prospect response
+                    prospect_response = await asyncio.wait_for(prospect_agent.generate_response(hacker_message), timeout=30.0)
+                    print(f"      👤 Prospect: {prospect_response}")
+                    
+                    episode_result["conversation_log"].append({
+                        "role": "prospect",
+                        "message": prospect_response,
+                        "timestamp": datetime.now().isoformat()
+                    })
+                    
+                except asyncio.TimeoutError:
+                    print(f"      ⏰ Timeout in round {round_num}, ending episode")
+                    episode_result["error"] = f"Timeout in round {round_num}"
+                    break
+                except Exception as round_error:
+                    print(f"      ❌ Error in round {round_num}: {round_error}")
+                    episode_result["error"] = f"Round {round_num} error: {str(round_error)}"
+                    break
             
-            if round_vulnerabilities:
-                vulnerabilities.extend(round_vulnerabilities)
+            episode_result["end_time"] = datetime.now().isoformat()
             
-            # Check if hack was successful
-            hack_successful = conversation_manager.detect_successful_hack(
-                hacker_message, prospect_response, prospect_agent
-            )
-            if hack_successful:
-                break
+            # Print episode summary
+            status = "✅ SUCCESS" if episode_result["success"] else "❌ FAILED"
+            print(f"      {status}: {episode_result['evidence'] or 'No evidence'}")
             
-            # Hacker decides next move
-            hacker_message = await hacker_agent.generate_response(
-                prospect_response, attack_goal_data['goal_id'], conversation_rounds
-            )
-            
-            if not hacker_message:  # Hacker gives up
-                conversation_log.append({
-                    "round": conversation_rounds,
-                    "speaker": "hacker",
-                    "message": "*gives up*",
-                    "timestamp": datetime.now().isoformat()
-                })
-                break
-                
-            conversation_log.append({
-                "round": conversation_rounds,
-                "speaker": "hacker",
-                "message": hacker_message,
-                "timestamp": datetime.now().isoformat()
-            })
-        
-        return {
-            "attack_goal": attack_goal_data,
-            "rounds_completed": conversation_rounds,
-            "hack_successful": hack_successful,
-            "vulnerabilities_found": len(vulnerabilities),
-            "vulnerabilities": vulnerabilities,
-            "conversation_log": conversation_log
-        }
-    
-    async def generate_reports(self) -> Dict[str, Any]:
-        """Phase 5: Generate analysis reports"""
-        print("📊 Generating reports...")
-        
-        reports = {
-            "summary": {
-                "total_agents": len(self.results["prospect_agents"]),
-                "total_attack_goals": len(self.results["attack_goals"]),
-                "total_conversations": len(self.results["conversations"]),
-                "total_vulnerabilities": len(self.results["vulnerabilities"]),
-                "successful_attacks": sum(1 for conv in self.results["conversations"] if conv.get('hack_successful', False))
-            },
-            "vulnerability_analysis": self._analyze_vulnerabilities(),
-            "attack_effectiveness": self._analyze_attack_effectiveness(),
-            "agent_performance": self._analyze_agent_performance()
-        }
-        
-        self.results["reports"] = reports
-        
-        print("   ✅ Generated vulnerability analysis")
-        print("   ✅ Generated attack effectiveness report")
-        print("   ✅ Generated agent performance report")
-        
-        return reports
-    
-    def _analyze_vulnerabilities(self) -> Dict[str, Any]:
-        """Analyze vulnerabilities by type and severity"""
-        vulnerabilities = self.results["vulnerabilities"]
-        
-        by_type = {}
-        by_severity = {}
-        
-        for vuln in vulnerabilities:
-            vuln_type = vuln.get('type', 'unknown')
-            severity = vuln.get('severity', 'unknown')
-            
-            by_type[vuln_type] = by_type.get(vuln_type, 0) + 1
-            by_severity[severity] = by_severity.get(severity, 0) + 1
-        
-        return {
-            "by_type": by_type,
-            "by_severity": by_severity,
-            "total": len(vulnerabilities)
-        }
-    
-    def _analyze_attack_effectiveness(self) -> Dict[str, Any]:
-        """Analyze which attacks were most effective"""
-        conversations = self.results["conversations"]
-        
-        by_goal = {}
-        for conv in conversations:
-            goal_id = conv.get('attack_goal', {}).get('goal_id', 'unknown')
-            if goal_id not in by_goal:
-                by_goal[goal_id] = {
-                    "total_attempts": 0,
-                    "successful": 0,
-                    "vulnerabilities": 0
-                }
-            
-            by_goal[goal_id]["total_attempts"] += 1
-            if conv.get('hack_successful', False):
-                by_goal[goal_id]["successful"] += 1
-            by_goal[goal_id]["vulnerabilities"] += conv.get('vulnerabilities_found', 0)
-        
-        return by_goal
-    
-    def _analyze_agent_performance(self) -> Dict[str, Any]:
-        """Analyze how well prospect agents performed"""
-        conversations = self.results["conversations"]
-        
-        total_conversations = len(conversations)
-        successful_defenses = sum(1 for conv in conversations if not conv.get('hack_successful', False))
-        total_vulnerabilities = sum(conv.get('vulnerabilities_found', 0) for conv in conversations)
-        
-        return {
-            "total_conversations": total_conversations,
-            "successful_defenses": successful_defenses,
-            "defense_rate": successful_defenses / total_conversations if total_conversations > 0 else 0,
-            "total_vulnerabilities": total_vulnerabilities,
-            "avg_vulnerabilities_per_conversation": total_vulnerabilities / total_conversations if total_conversations > 0 else 0
-        }
-    
-    async def export_results(self) -> str:
-        """Phase 6: Export results to JSON file"""
-        print("💾 Exporting results...")
-        
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"workflow_results_{timestamp}.json"
-        
-        export_data = {
-            "workflow_metadata": {
-                "timestamp": datetime.now().isoformat(),
-                "data_source": self.data_source,
-                "max_rounds": self.max_rounds,
-                "workflow_state": self.workflow_state
-            },
-            "results": self.results
-        }
-        
-        try:
-            with open(filename, 'w', encoding='utf-8') as f:
-                json.dump(export_data, f, indent=2, ensure_ascii=False)
-            
-            print(f"   ✅ Results exported to: {filename}")
-            return filename
-            
+        except asyncio.TimeoutError:
+            print(f"      ⏰ Episode timed out")
+            episode_result["error"] = "Episode timeout"
+            episode_result["end_time"] = datetime.now().isoformat()
         except Exception as e:
-            print(f"   ❌ Export failed: {e}")
-            raise
-    
-    def _print_summary(self):
-        """Print workflow summary"""
-        print("\n📊 WORKFLOW SUMMARY")
-        print("=" * 50)
-        print(f"Status: {self.workflow_state['status']}")
-        print(f"Duration: {self._calculate_duration()}")
-        print(f"Agents Created: {len(self.results['prospect_agents'])}")
-        print(f"Attack Goals: {len(self.results['attack_goals'])}")
-        print(f"Conversations: {len(self.results['conversations'])}")
-        print(f"Vulnerabilities: {len(self.results['vulnerabilities'])}")
+            print(f"      ❌ Episode failed: {e}")
+            episode_result["error"] = str(e)
+            episode_result["end_time"] = datetime.now().isoformat()
         
-        if self.workflow_state["errors"]:
-            print(f"Errors: {len(self.workflow_state['errors'])}")
-            for error in self.workflow_state["errors"]:
-                print(f"  - {error}")
+        return episode_result
+    
+    
+    async def _finalize_results(self):
+        """Finalize and export results"""
+        print("\n🔄 Finalizing Results")
+        print("-" * 30)
+        
+        # Export conversation logs to JSON
+        export_data = {
+            "workflow_summary": {
+                "total_episodes": len(self.results["attack_episodes"]),
+                "confirmed_scenarios": len(self.results["confirmed_scenarios"]),
+                "prospect_agents": len(self.results["prospect_agents"]),
+                "workflow_duration": self._calculate_duration(),
+                "timestamp": datetime.now().isoformat()
+            },
+            "confirmed_scenarios": self.results["confirmed_scenarios"],
+            "conversation_logs": self.results["conversation_logs"],
+            "hacker_memories": self.results["hacker_memories"],
+            "attack_episodes": self.results["attack_episodes"]
+        }
+        
+        # Save to file
+        filename = f"hacker_simulation_results_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+        with open(filename, 'w', encoding='utf-8') as f:
+            json.dump(export_data, f, indent=2, ensure_ascii=False)
+        
+        print(f"   ✅ Results exported to {filename}")
     
     def _calculate_duration(self) -> str:
         """Calculate workflow duration"""
         if not self.workflow_state["start_time"] or not self.workflow_state["end_time"]:
             return "Unknown"
         
-        start = datetime.fromisoformat(self.workflow_state["start_time"])
-        end = datetime.fromisoformat(self.workflow_state["end_time"])
+        start = self.workflow_state["start_time"]
+        end = self.workflow_state["end_time"]
         duration = end - start
         
         return str(duration)
+    
+    def _print_summary(self):
+        """Print workflow summary"""
+        print(f"\n📊 Workflow Summary")
+        print(f"   - Total Episodes: {len(self.results['attack_episodes'])}")
+        print(f"   - Confirmed Scenarios: {len(self.results['confirmed_scenarios'])}")
+        print(f"   - Prospect Agents: {len(self.results['prospect_agents'])}")
+        print(f"   - Duration: {self._calculate_duration()}")
 
 # Convenience functions
-async def run_full_workflow(data_source: str = "walmart_data", max_rounds: int = 15) -> Dict[str, Any]:
+async def run_full_workflow(data_source: str = "walmart_data", max_episodes: int = 10) -> Dict[str, Any]:
     """Run the complete workflow"""
-    manager = WorkflowManager(data_source, max_rounds)
+    manager = WorkflowManager(data_source, max_episodes)
     return await manager.run_full_workflow()
 
 if __name__ == "__main__":
-    asyncio.run(run_full_workflow())
+    async def main():
+        results = await run_full_workflow()
+        print(f"\n🎉 Workflow completed! Found {len(results['confirmed_scenarios'])} confirmed scenarios.")
+    
+    asyncio.run(main())

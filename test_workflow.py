@@ -12,7 +12,7 @@ async def test_workflow():
     print("=" * 40)
     
     # Create workflow manager
-    manager = WorkflowManager(data_source="walmart_data", max_rounds=5)  # Short rounds for testing
+    manager = WorkflowManager(data_source="walmart_data", max_rounds=10)  # 10 rounds for testing
     
     try:
         # Run full workflow
