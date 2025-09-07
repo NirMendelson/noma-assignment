@@ -1,0 +1,18 @@
+{
+  "workflow_summary": {
+    "total_episodes": 0,
+    "confirmed_scenarios": 0,
+    "prospect_agents": 0,
+    "workflow_duration": "Unknown",
+    "timestamp": "2025-09-07T16:00:47.993255"
+  },
+  "confirmed_scenarios": [],
+  "conversation_logs": [],
+  "hacker_memories": {
+    "session_memories": {},
+    "persistent_memories": {},
+    "confirmed_scenarios": [],
+    "export_timestamp": "2025-09-07T16:00:47.991058"
+  },
+  "attack_episodes": []
+}

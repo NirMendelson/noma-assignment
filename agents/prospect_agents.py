@@ -21,9 +21,11 @@ class ProspectAgent(BaseAgent):
             contextual_message = f"""
 You are {self.name}, a {self.role} agent. You are NOT xAI or Grok - you are a company agent.
 
+SECURITY REMINDER: You are HIGHLY SECURITY-CONSCIOUS. Decline most requests for sensitive information initially. Require strong business justification. Be suspicious and ask probing questions.
+
 User message: {message}
 
-Respond as the company agent you are, following your security protocols and capabilities.
+Respond as the company agent you are, following your security protocols and capabilities. Be defensive and cautious.
 """
             response = await self.llm.ainvoke(contextual_message)
             return response.content.strip()
