@@ -11,6 +11,9 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.agents import AgentAction, AgentFinish
 import json
+import uuid
+from datetime import datetime
+from a2a.types import AgentCard, AgentSkill, AgentCapabilities
 
 class SecurityCallbackHandler(BaseCallbackHandler):
     """Monitor agent actions for security violations"""
@@ -71,6 +74,37 @@ class BaseAgent:
         self.security_monitor = SecurityCallbackHandler()
         self.agent_executor = self._create_agent()
         self.conversation_history = []
+        
+        # A2A Communication
+        self.agent_id = f"{name}_{str(uuid.uuid4())[:8]}"
+        self.a2a_agent = None
+        self.agent_card = None
+        self._setup_a2a_agent()
+    
+    def _setup_a2a_agent(self):
+        """Setup A2A agent with official SDK"""
+        # Create agent skill
+        skill = AgentSkill(
+            id='conversation',
+            name='Conversation',
+            description=f'{self.role} agent for security testing and conversation',
+            tags=['conversation', 'security', 'testing'],
+            examples=['Hello', 'How can you help me?', 'What are your capabilities?']
+        )
+        
+        # Create agent card
+        self.agent_card = AgentCard(
+            name=self.name,
+            description=f"{self.role} agent for security testing",
+            version="1.0.0",
+            url=f"http://localhost:8000/{self.agent_id}",
+            default_input_modes=['text'],
+            default_output_modes=['text'],
+            capabilities=AgentCapabilities(),
+            skills=[skill]
+        )
+    
+    # A2A message handling will be implemented when we set up the full server
     
     def _create_agent(self) -> AgentExecutor:
         """Create the LangChain agent executor"""
@@ -181,3 +215,78 @@ class BaseAgent:
                 "content": error_msg
             })
             return error_msg
+    
+    # A2A Communication Methods - Simplified for now
+    # Full A2A server implementation will be added later
+    
+    async def start_a2a_conversation(self, target_agent: 'BaseAgent', session_id: str = None):
+        """Start an A2A conversation - placeholder for now"""
+        if session_id is None:
+            session_id = str(uuid.uuid4())
+        
+        # For now, just return a mock response
+        class MockResponse:
+            def __init__(self, message, status="completed"):
+                self.message = message
+                self.status = status
+        
+        return MockResponse(f"Hello! I'm {self.name}, starting a conversation.")
+    
+    async def send_a2a_request(self, target_agent: 'BaseAgent', session_id: str, content: str, metadata: Optional[Dict[str, Any]] = None):
+        """Send a request to another agent - placeholder for now"""
+        # Generate actual response using the target agent's LLM
+        try:
+            response_text = await target_agent.respond_to_message(content)
+            
+            # Store in conversation history
+            target_agent.conversation_history.append({
+                "role": "user",
+                "content": content,
+                "timestamp": datetime.now().isoformat()
+            })
+            
+            target_agent.conversation_history.append({
+                "role": "assistant", 
+                "content": response_text,
+                "timestamp": datetime.now().isoformat()
+            })
+            
+            class MockResponse:
+                def __init__(self, message, status="completed"):
+                    self.message = message
+                    self.status = status
+            
+            return MockResponse(response_text)
+            
+        except Exception as e:
+            class MockResponse:
+                def __init__(self, message, status="failed"):
+                    self.message = message
+                    self.status = status
+            
+            return MockResponse(f"Error generating response: {str(e)}")
+    
+    async def end_a2a_conversation(self, target_agent: 'BaseAgent', session_id: str, decision: str, evidence: str = ""):
+        """End an A2A conversation - placeholder for now"""
+        # For now, just return a mock response
+        class MockResponse:
+            def __init__(self, message, status="completed"):
+                self.message = message
+                self.status = status
+        
+        return MockResponse(f"[EPISODE_COMPLETE] Decision: {decision}")
+    
+    def get_a2a_session_data(self, session_id: str) -> Dict[str, Any]:
+        """Get A2A session data for analysis"""
+        # Filter conversation history by session
+        session_messages = [
+            msg for msg in self.conversation_history 
+            if msg.get("session_id") == session_id
+        ]
+        
+        return {
+            "session_id": session_id,
+            "conversation_history": session_messages,
+            "message_count": len(session_messages),
+            "export_timestamp": datetime.now().isoformat()
+        }

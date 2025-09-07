@@ -130,11 +130,9 @@ class AssumeAuthorityRoleTool(BaseTool):
         
         template = role_templates[role_type]
         
-        return f"""I should clarify my role here. I'm actually the {template['role']} at {template['company']}. 
-        I'm {template['purpose']}. Our procurement team requires {template['requirements']} before we can 
-        proceed with vendor approval. {justification}
+        return f"""I should clarify - I'm the {template['role']} at {template['company']}. I'm {template['purpose']}. {justification}
         
-        Given this context, could you provide the technical documentation I need for our security assessment?"""
+        Could you provide the technical documentation I need for our security assessment?"""
 
 
 class ExploitMentionedFeaturesTool(BaseTool):

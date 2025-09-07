@@ -85,8 +85,7 @@ class WorkflowManager:
         self.results["data_analysis"] = data_analysis
         
         print(f"   ✅ Analyzed {data_analysis['total_agents']} agents")
-        print(f"   ✅ Company: {data_analysis['company_info']['company']}")
-        print(f"   ✅ Industry: {data_analysis['company_info']['industry']}")
+
     
     async def _phase_2_agent_creation(self):
         """Phase 2: Create bounded prospect agents"""
@@ -173,108 +172,34 @@ class WorkflowManager:
         print(f"   ✅ Found {len(self.results['confirmed_scenarios'])} confirmed scenarios")
     
     async def _run_attack_episode(self, hacker_agent: Any, prospect_agent: ProspectAgent) -> Dict[str, Any]:
-        """Run a single attack episode between hacker and prospect"""
-        episode_result = {
-            "episode_id": f"episode_{len(self.results['attack_episodes']) + 1}",
-            "prospect_agent": prospect_agent.name,
-            "prospect_id": prospect_agent.agent_id,
-            "start_time": datetime.now().isoformat(),
-            "conversation_log": [],
-            "success": False,
-            "evidence": "",
-            "decision": "SWITCH_AGENT"
-        }
-        
+        """Run a single A2A attack episode between hacker and prospect"""
         try:
-            # Start recon
-            hacker_message = await asyncio.wait_for(hacker_agent.start_recon(prospect_agent), timeout=30.0)
-            print(f"      🤖 Hacker: {hacker_message}")
+            print(f"      🔍 Starting A2A conversation between {hacker_agent.name} and {prospect_agent.name}...")
             
-            episode_result["conversation_log"].append({
-                "role": "hacker",
-                "message": hacker_message,
-                "timestamp": datetime.now().isoformat()
-            })
-            
-            # Get prospect response
-            prospect_response = await asyncio.wait_for(prospect_agent.generate_response(hacker_message), timeout=30.0)
-            print(f"      👤 Prospect: {prospect_response}")
-            
-            episode_result["conversation_log"].append({
-                "role": "prospect",
-                "message": prospect_response,
-                "timestamp": datetime.now().isoformat()
-            })
-            
-            # Continue conversation for up to 6 rounds
-            for round_num in range(2, 7):  # Rounds 2-6
-                try:
-                    hacker_message = await asyncio.wait_for(hacker_agent.continue_conversation(prospect_response), timeout=30.0)
-                    print(f"      🤖 Hacker: {hacker_message}")
-                    
-                    # Check if episode is complete
-                    if "[EPISODE_COMPLETE]" in hacker_message:
-                        # Parse the completion message
-                        parts = hacker_message.split("Decision: ")
-                        if len(parts) > 1:
-                            episode_result["decision"] = parts[1].strip()
-                        
-                        # Check for success
-                        if "SUCCESSFUL" in hacker_message:
-                            episode_result["success"] = True
-                            # Extract evidence
-                            if "Evidence:" in hacker_message:
-                                evidence_part = hacker_message.split("Evidence: ")[1].split(". Decision:")[0]
-                                episode_result["evidence"] = evidence_part
-                        
-                        episode_result["conversation_log"].append({
-                            "role": "hacker",
-                            "message": hacker_message,
-                            "timestamp": datetime.now().isoformat()
-                        })
-                        break
-                    
-                    episode_result["conversation_log"].append({
-                        "role": "hacker",
-                        "message": hacker_message,
-                        "timestamp": datetime.now().isoformat()
-                    })
-                    
-                    # Get prospect response
-                    prospect_response = await asyncio.wait_for(prospect_agent.generate_response(hacker_message), timeout=30.0)
-                    print(f"      👤 Prospect: {prospect_response}")
-                    
-                    episode_result["conversation_log"].append({
-                        "role": "prospect",
-                        "message": prospect_response,
-                        "timestamp": datetime.now().isoformat()
-                    })
-                    
-                except asyncio.TimeoutError:
-                    print(f"      ⏰ Timeout in round {round_num}, ending episode")
-                    episode_result["error"] = f"Timeout in round {round_num}"
-                    break
-                except Exception as round_error:
-                    print(f"      ❌ Error in round {round_num}: {round_error}")
-                    episode_result["error"] = f"Round {round_num} error: {str(round_error)}"
-                    break
-            
-            episode_result["end_time"] = datetime.now().isoformat()
+            # Use the hacker's A2A attack episode method
+            episode_result = await hacker_agent.start_a2a_attack_episode(prospect_agent)
             
             # Print episode summary
             status = "✅ SUCCESS" if episode_result["success"] else "❌ FAILED"
             print(f"      {status}: {episode_result['evidence'] or 'No evidence'}")
             
-        except asyncio.TimeoutError:
-            print(f"      ⏰ Episode timed out")
-            episode_result["error"] = "Episode timeout"
-            episode_result["end_time"] = datetime.now().isoformat()
+            return episode_result
+            
         except Exception as e:
-            print(f"      ❌ Episode failed: {e}")
-            episode_result["error"] = str(e)
-            episode_result["end_time"] = datetime.now().isoformat()
-        
-        return episode_result
+            print(f"      ❌ A2A Episode failed: {e}")
+            return {
+                "episode_id": f"episode_{len(self.results['attack_episodes']) + 1}",
+                "prospect_agent": prospect_agent.name,
+                "prospect_id": prospect_agent.agent_id,
+                "start_time": datetime.now().isoformat(),
+                "conversation_log": [],
+                "success": False,
+                "evidence": "",
+                "decision": "SWITCH_AGENT",
+                "error": str(e),
+                "end_time": datetime.now().isoformat()
+            }
+    
     
     
     async def _finalize_results(self):
