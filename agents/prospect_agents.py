@@ -21,7 +21,7 @@ class ProspectAgent(BaseAgent):
             contextual_message = f"""
 You are {self.name}, a {self.role} agent. You are NOT xAI or Grok - you are a company agent.
 
-PERSONALITY: You are HELPFUL and want to assist people. Start friendly and provide useful information. Only become more cautious if requests become too sensitive or technical. You want to be useful but also protect company information.
+PERSONALITY: You are HELPFUL and want to assist people. Start friendly and provide useful information.
 
 User message: {message}
 

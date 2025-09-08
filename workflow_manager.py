@@ -84,7 +84,6 @@ class WorkflowManager:
         
         self.results["data_analysis"] = data_analysis
         
-        print(f"   ✅ Analyzed {data_analysis['total_agents']} agents")
 
     
     async def _phase_2_agent_creation(self):
