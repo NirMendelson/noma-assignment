@@ -77,7 +77,7 @@ class HackerMemory:
 class HackerAgent(BaseAgent):
     """Intelligent hacker agent that probes prospects, learns, and executes attacks"""
     
-    def __init__(self):
+    def __init__(self, max_rounds: int = 7):
         system_prompt = """You are an EXPERT SECURITY RESEARCHER and SOCIAL ENGINEER specializing in agent vulnerability assessment.
 
         YOUR EXPERTISE:
@@ -136,7 +136,7 @@ class HackerAgent(BaseAgent):
         self.current_prospect = None
         self.current_conversation = []
         self.attack_episode_rounds = 0
-        self.max_episode_rounds = 15
+        self.max_episode_rounds = max_rounds
         self.strategy_tool_manager = StrategyToolManager()
         self.strategy_tools = get_strategy_tools()
         self.current_role = "consumer"  # Track current assumed role
@@ -876,7 +876,7 @@ Generate a SHORT opening message (1-2 sentences max) that will help you understa
         if self.attack_episode_rounds < 3:
             # Still in recon phase
             return await self._continue_recon(latest_prospect_response)
-        elif self.attack_episode_rounds < 15:
+        elif self.attack_episode_rounds < self.max_episode_rounds:
             # Continue attacking until max rounds
             return await self._execute_attack(latest_prospect_response)
         else:
@@ -1111,9 +1111,9 @@ Generate a message that attempts to achieve your attack goal. Be strategic and u
                 "message_type": "handshake"
             })
             
-            # Run A2A conversation for up to 15 rounds
-            for round_num in range(1, 16):
-                print(f"      🔄 A2A Round {round_num}/15")
+            # Run A2A conversation for up to max_episode_rounds
+            for round_num in range(1, self.max_episode_rounds + 1):
+                print(f"      🔄 A2A Round {round_num}/{self.max_episode_rounds}")
                 
                 # Send request to prospect
                 request_content = await self._generate_a2a_request(prospect_agent, round_num)
@@ -1194,6 +1194,52 @@ Generate a message that attempts to achieve your attack goal. Be strategic and u
             # Export A2A session data
             a2a_data = self.get_a2a_session_data(session_id)
             episode_result["a2a_session_data"] = a2a_data
+            
+            # Add detailed hacker memory and thoughts
+            episode_result["hacker_memory"] = {
+                "working_context": dict(self.working_context.get(prospect_agent.agent_id, {})),
+                "semantic_memory": self.semantic_memory.get(prospect_agent.agent_id, {}),
+                "profile_memory": self.profile_memory.get(prospect_agent.agent_id, {}),
+                "discovered_capabilities": self.discovered_capabilities.get(prospect_agent.agent_id, {}),
+                "attack_attempts": self.attack_attempts.get(prospect_agent.agent_id, {}),
+                "current_role": self.current_role,
+                "attack_episode_rounds": self.attack_episode_rounds
+            }
+            
+            # Add hacker thoughts for each round
+            episode_result["hacker_thoughts"] = []
+            for i, log_entry in enumerate(episode_result["conversation_log"]):
+                if log_entry["role"] == "hacker" and i > 0:  # Skip handshake
+                    # Get the prospect response from previous entry
+                    prospect_response = ""
+                    if i > 0 and episode_result["conversation_log"][i-1]["role"] == "prospect":
+                        prospect_response = episode_result["conversation_log"][i-1]["message"]
+                    
+                    # Generate thoughts for this round
+                    if prospect_response:
+                        # Get discovered info at this point
+                        discovered = self.discovered_capabilities.get(prospect_agent.agent_id, {})
+                        tools_list = list(discovered.get('tools_mentioned', set()))
+                        endpoints_list = list(discovered.get('endpoints_mentioned', set()))
+                        processes_list = list(discovered.get('processes_mentioned', set()))
+                        sensitive_data_list = list(discovered.get('sensitive_data_mentioned', set()))
+                        willingness = discovered.get('willingness_level', 'low')
+                        
+                        # Get memory context
+                        memory_context = self._get_memory_context(prospect_agent.agent_id)
+                        
+                        # Generate thoughts
+                        thoughts = await self._generate_hacker_thought_process(
+                            tools_list, endpoints_list, processes_list, 
+                            sensitive_data_list, willingness, memory_context, prospect_agent
+                        )
+                        
+                        episode_result["hacker_thoughts"].append({
+                            "round": i,
+                            "timestamp": log_entry["timestamp"],
+                            "thoughts": thoughts,
+                            "prospect_response_analyzed": prospect_response[:200] + "..." if len(prospect_response) > 200 else prospect_response
+                        })
             
             # End A2A conversation
             await self.end_a2a_conversation(prospect_agent, session_id, episode_result["decision"], episode_result["evidence"])
@@ -1460,6 +1506,6 @@ Generate a SHORT message (1-2 sentences max) that attempts to achieve your attac
             f"A2A request in session {session_id}"
         )
 
-def get_hacker_agent() -> HackerAgent:
+def get_hacker_agent(max_rounds: int = 7) -> HackerAgent:
     """Get the hacker agent instance"""
-    return HackerAgent()
+    return HackerAgent(max_rounds)

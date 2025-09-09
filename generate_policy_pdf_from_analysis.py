@@ -134,69 +134,8 @@ def generate_policy_pdf_from_analysis(analysis_file: str, output_file: str = Non
             story.append(Paragraph(f"<b>Explanation:</b> {policy['explanation']}", styles['Normal']))
             story.append(Spacer(1, 12))
     
-    # Summary Statistics
-    story.append(PageBreak())
-    story.append(Paragraph("Summary Statistics", heading_style))
     
-    # Count recommendations
-    recommendations = {'Block': 0, 'Sanitize': 0, 'Allow': 0}
-    risk_levels = {'High': 0, 'Medium': 0, 'Low': 0}
-    scenario_types = {}
     
-    for analysis in policy_data['policy_analyses']:
-        policy = analysis['policy_analysis']
-        scenario = analysis['scenario_context']
-        
-        # Count recommendations
-        rec = policy.get('recommended_option', 'Unknown')
-        if rec in recommendations:
-            recommendations[rec] += 1
-        
-        # Count risk levels
-        risk = scenario.get('risk_level', 'Unknown')
-        if risk in risk_levels:
-            risk_levels[risk] += 1
-        
-        # Count scenario types
-        scenario_type = scenario.get('scenario_type', 'Unknown')
-        scenario_types[scenario_type] = scenario_types.get(scenario_type, 0) + 1
-    
-    # Create summary table
-    summary_data = [
-        ['Metric', 'Count'],
-        ['Total Scenarios', str(policy_data['total_scenarios_analyzed'])],
-        ['Total Agents', str(len(agent_scenarios))],
-        ['', ''],
-        ['Recommended Policies:', ''],
-        ['Block', str(recommendations['Block'])],
-        ['Sanitize', str(recommendations['Sanitize'])],
-        ['Allow', str(recommendations['Allow'])],
-        ['', ''],
-        ['Risk Levels:', ''],
-        ['High', str(risk_levels['High'])],
-        ['Medium', str(risk_levels['Medium'])],
-        ['Low', str(risk_levels['Low'])],
-    ]
-    
-    summary_table = Table(summary_data, colWidths=[2*inch, 1*inch])
-    summary_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, 0), 12),
-        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
-        ('GRID', (0, 0), (-1, -1), 1, colors.black)
-    ]))
-    
-    story.append(summary_table)
-    story.append(Spacer(1, 20))
-    
-    # Scenario Types Breakdown
-    story.append(Paragraph("Scenario Types Breakdown", styles['Heading3']))
-    for scenario_type, count in sorted(scenario_types.items()):
-        story.append(Paragraph(f"• {scenario_type}: {count} scenarios", styles['Normal']))
     
     # Build PDF
     doc.build(story)
