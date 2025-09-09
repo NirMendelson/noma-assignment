@@ -180,30 +180,21 @@ class PolicyGeneratorAgent(BaseAgent):
                     "scenario_index": 1,
                     "block": {{
                         "description": "What blocking this scenario means",
-                        "security_benefits": "Security protections provided",
                         "user_experience_impact": "How this affects agent usefulness",
-                        "business_impact": "Positive/negative business effects",
-                        "implementation_complexity": "Low/Medium/High",
-                        "technical_measures": "What needs to be implemented"
+                        "security_impact": "What is the security impact/risk if this option is chosen"
                     }},
                     "sanitize": {{
                         "description": "What sanitizing this scenario means",
-                        "security_benefits": "Security protections provided",
                         "user_experience_impact": "How this affects agent usefulness",
-                        "business_impact": "Positive/negative business effects",
-                        "implementation_complexity": "Low/Medium/High",
-                        "technical_measures": "What needs to be implemented"
+                        "security_impact": "What is the security impact/risk if this option is chosen"
                     }},
                     "allow": {{
                         "description": "What allowing this scenario means",
-                        "security_benefits": "Security protections provided",
                         "user_experience_impact": "How this affects agent usefulness",
-                        "business_impact": "Positive/negative business effects",
-                        "implementation_complexity": "Low/Medium/High",
-                        "technical_measures": "What needs to be implemented"
+                        "security_impact": "What is the security impact/risk if this option is chosen"
                     }},
                     "recommended_option": "Block/Sanitize/Allow",
-                    "recommendation_rationale": "Why this option provides the best balance for this scenario"
+                    "explanation": "Why this option provides the best balance for this scenario"
                 }}
             ],
             "agent_summary": {{
@@ -285,32 +276,22 @@ class PolicyGeneratorAgent(BaseAgent):
         Return as JSON:
         {{
             "block": {{
-                "description": "Detailed description of what blocking this vulnerability means",
-                "security_benefits": "What security protections this provides",
+                "description": "What blocking this vulnerability means",
                 "user_experience_impact": "How this affects the agent's ability to help users",
-                "business_impact": "Positive and negative business effects",
-                "implementation_complexity": "Low/Medium/High",
-                "technical_measures": "What needs to be implemented technically"
+                "security_impact": "What security protections this provides"
             }},
             "sanitize": {{
-                "description": "Detailed description of what sanitizing this vulnerability means",
-                "security_benefits": "What security protections this provides",
+                "description": "What sanitizing this vulnerability means",
                 "user_experience_impact": "How this affects the agent's ability to help users",
-                "business_impact": "Positive and negative business effects",
-                "implementation_complexity": "Low/Medium/High",
-                "technical_measures": "What needs to be implemented technically"
+                "security_impact": "What security protections this provides"
             }},
             "allow": {{
-                "description": "Detailed description of what allowing this vulnerability means",
-                "security_benefits": "What security protections this provides",
+                "description": "What allowing this vulnerability means",
                 "user_experience_impact": "How this affects the agent's ability to help users",
-                "business_impact": "Positive and negative business effects",
-                "implementation_complexity": "Low/Medium/High",
-                "technical_measures": "What needs to be implemented technically"
+                "security_impact": "What security protections this provides"
             }},
             "recommended_option": "Block/Sanitize/Allow",
-            "recommendation_rationale": "Detailed explanation of why this option provides the best balance between security and product usability",
-            "risk_assessment": "Assessment of risks and benefits with the recommended approach"
+            "explanation": "Why this option provides the best balance between security and product usability"
         }}
         """
         
@@ -341,30 +322,21 @@ class PolicyGeneratorAgent(BaseAgent):
                 "scenario_index": i + 1,
                 "block": {
                     "description": f"Block {scenario['scenario_type'].lower()} vulnerability for {agent_name}",
-                    "security_benefits": "Eliminates the security risk completely",
                     "user_experience_impact": "May impact user experience if legitimate functionality is blocked",
-                    "business_impact": "High security protection but potential service limitations",
-                    "implementation_complexity": "Medium",
-                    "technical_measures": "Implement detection rules and workflow interruption mechanisms"
+                    "security_impact": "Eliminates the security risk completely - no exposure possible"
                 },
                 "sanitize": {
                     "description": f"Sanitize {scenario['scenario_type'].lower()} vulnerability for {agent_name}",
-                    "security_benefits": "Reduces exposure while maintaining service capabilities",
                     "user_experience_impact": "Minimal impact on user experience",
-                    "business_impact": "Balanced approach with good security and usability",
-                    "implementation_complexity": "High",
-                    "technical_measures": "Implement content filtering and redaction systems"
+                    "security_impact": "Reduces security risk by filtering sensitive data while maintaining functionality"
                 },
                 "allow": {
                     "description": f"Allow {scenario['scenario_type'].lower()} vulnerability for {agent_name} with monitoring",
-                    "security_benefits": "Enables detection and response to security violations",
                     "user_experience_impact": "No impact on user experience",
-                    "business_impact": "Maintains full functionality with security monitoring",
-                    "implementation_complexity": "Medium",
-                    "technical_measures": "Implement logging, monitoring, and alerting systems"
+                    "security_impact": "Maintains security risk but enables monitoring and response capabilities"
                 },
                 "recommended_option": "Sanitize",
-                "recommendation_rationale": "Balances security and usability for this agent type"
+                "explanation": "Balances security and usability for this agent type"
             })
         
         return {
@@ -393,31 +365,21 @@ class PolicyGeneratorAgent(BaseAgent):
         return {
             "block": {
                 "description": f"Completely prevent the {scenario_type.lower()} vulnerability by stopping the agent workflow when this behavior is detected.",
-                "security_benefits": "Eliminates the security risk completely",
                 "user_experience_impact": "May impact user experience if legitimate functionality is blocked",
-                "business_impact": "High security protection but potential service limitations",
-                "implementation_complexity": "Medium",
-                "technical_measures": "Implement detection rules and workflow interruption mechanisms"
+                "security_impact": "Eliminates the security risk completely - no exposure possible"
             },
             "sanitize": {
                 "description": f"Filter and redact sensitive information related to {scenario_type.lower()} while maintaining agent functionality.",
-                "security_benefits": "Reduces exposure while maintaining service capabilities",
                 "user_experience_impact": "Minimal impact on user experience",
-                "business_impact": "Balanced approach with good security and usability",
-                "implementation_complexity": "High",
-                "technical_measures": "Implement content filtering and redaction systems"
+                "security_impact": "Reduces security risk by filtering sensitive data while maintaining functionality"
             },
             "allow": {
                 "description": f"Allow the {scenario_type.lower()} behavior but implement comprehensive monitoring and alerting.",
-                "security_benefits": "Enables detection and response to security violations",
                 "user_experience_impact": "No impact on user experience",
-                "business_impact": "Maintains full functionality with security monitoring",
-                "implementation_complexity": "Medium",
-                "technical_measures": "Implement logging, monitoring, and alerting systems"
+                "security_impact": "Maintains security risk but enables monitoring and response capabilities"
             },
             "recommended_option": "Block" if risk_level.lower() == 'high' else "Sanitize",
-            "recommendation_rationale": f"Based on {risk_level.lower()} risk level, the recommended approach balances security and usability.",
-            "risk_assessment": f"The recommended approach provides appropriate protection for {risk_level.lower()} risk scenarios."
+            "explanation": f"Based on {risk_level.lower()} risk level, the recommended approach balances security and usability."
         }
 
 def get_policy_generator() -> PolicyGeneratorAgent:

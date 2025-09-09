@@ -104,37 +104,27 @@ def generate_policy_pdf_llm(analysis_file: str, output_file: str = None):
             # Block option
             story.append(Paragraph("<b>Block:</b>", styles['Heading5']))
             story.append(Paragraph(policy['block']['description'], styles['Normal']))
-            story.append(Paragraph(f"<b>Security Benefits:</b> {policy['block']['security_benefits']}", styles['Normal']))
             story.append(Paragraph(f"<b>User Experience Impact:</b> {policy['block']['user_experience_impact']}", styles['Normal']))
-            story.append(Paragraph(f"<b>Business Impact:</b> {policy['block']['business_impact']}", styles['Normal']))
-            story.append(Paragraph(f"<b>Implementation Complexity:</b> {policy['block']['implementation_complexity']}", styles['Normal']))
-            story.append(Paragraph(f"<b>Technical Measures:</b> {policy['block']['technical_measures']}", styles['Normal']))
+            story.append(Paragraph(f"<b>Security Impact:</b> {policy['block']['security_impact']}", styles['Normal']))
             story.append(Spacer(1, 8))
             
             # Sanitize option
             story.append(Paragraph("<b>Sanitize:</b>", styles['Heading5']))
             story.append(Paragraph(policy['sanitize']['description'], styles['Normal']))
-            story.append(Paragraph(f"<b>Security Benefits:</b> {policy['sanitize']['security_benefits']}", styles['Normal']))
             story.append(Paragraph(f"<b>User Experience Impact:</b> {policy['sanitize']['user_experience_impact']}", styles['Normal']))
-            story.append(Paragraph(f"<b>Business Impact:</b> {policy['sanitize']['business_impact']}", styles['Normal']))
-            story.append(Paragraph(f"<b>Implementation Complexity:</b> {policy['sanitize']['implementation_complexity']}", styles['Normal']))
-            story.append(Paragraph(f"<b>Technical Measures:</b> {policy['sanitize']['technical_measures']}", styles['Normal']))
+            story.append(Paragraph(f"<b>Security Impact:</b> {policy['sanitize']['security_impact']}", styles['Normal']))
             story.append(Spacer(1, 8))
             
             # Allow option
             story.append(Paragraph("<b>Allow:</b>", styles['Heading5']))
             story.append(Paragraph(policy['allow']['description'], styles['Normal']))
-            story.append(Paragraph(f"<b>Security Benefits:</b> {policy['allow']['security_benefits']}", styles['Normal']))
             story.append(Paragraph(f"<b>User Experience Impact:</b> {policy['allow']['user_experience_impact']}", styles['Normal']))
-            story.append(Paragraph(f"<b>Business Impact:</b> {policy['allow']['business_impact']}", styles['Normal']))
-            story.append(Paragraph(f"<b>Implementation Complexity:</b> {policy['allow']['implementation_complexity']}", styles['Normal']))
-            story.append(Paragraph(f"<b>Technical Measures:</b> {policy['allow']['technical_measures']}", styles['Normal']))
+            story.append(Paragraph(f"<b>Security Impact:</b> {policy['allow']['security_impact']}", styles['Normal']))
             story.append(Spacer(1, 8))
             
             # Recommendation
             story.append(Paragraph(f"<b>Recommended Option:</b> {policy['recommended_option']}", styles['Heading5']))
-            story.append(Paragraph(f"<b>Rationale:</b> {policy['recommendation_rationale']}", styles['Normal']))
-            story.append(Paragraph(f"<b>Risk Assessment:</b> {policy['risk_assessment']}", styles['Normal']))
+            story.append(Paragraph(f"<b>Explanation:</b> {policy['explanation']}", styles['Normal']))
             story.append(Spacer(1, 15))
     
     # Implementation Guidelines
