@@ -19,7 +19,7 @@ Noma cannot block all vulnerabilities by default:
 
 Noma therefore needs the prospect to agree on this trade-off policy, which requires buy-in from both the CISO's security team and the Product leadership (CPO/VP Product) on the client side.
 
-> **Note:** In enterprise sales, time kills deals: the longer the process drags, the lower the chances of closing. Every week shaved off onboarding translates directly into faster revenue recognition and higher growth.
+In enterprise sales, time kills deals: the longer the process drags, the lower the chances of closing. Every week shaved off onboarding translates directly into faster revenue recognition and higher growth. I decided to choose to tackle this issue - making the tradeoff policy process faster and easier, so that the whole onboarding process will be shorter and therefore the success rate will grow.
 
 ## Primary Users
 
