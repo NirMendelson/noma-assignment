@@ -435,7 +435,7 @@ class WorkflowManager:
         print(f"\n🎯 Final Output: Complete tradeoff policy PDF ready for review!")
 
 # Convenience functions
-async def run_full_workflow(data_source: str = "walmart_data", max_episodes: int = 10, max_rounds: int = 10) -> Dict[str, Any]:
+async def run_full_workflow(data_source: str = "walmart_data", max_episodes: int = 1, max_rounds: int = 1) -> Dict[str, Any]:
     """Run the complete workflow"""
     manager = WorkflowManager(data_source, max_episodes, max_rounds)
     return await manager.run_full_workflow()
