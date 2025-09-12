@@ -1,8 +1,8 @@
 # Noma Security Home Assignment
 
-## **1) Define the Problem Space**
+# 1. Define the Problem Space
 
-**Context**
+## Context
 
 I believe that the onboarding process looks like this:
 
@@ -19,65 +19,63 @@ Noma cannot block all vulnerabilities by default:
 
 Noma therefore needs the prospect to agree on this trade-off policy, which requires buy-in from both the CISO's security team and the Product leadership (CPO/VP Product) on the client side.
 
-I believe this trade-off agreement stage creates significant friction in the onboarding process and makes onboarding much longer than it should be. In enterprise sales, time kills deals: the longer the process drags, the lower the chances of closing. Every week shaved off onboarding translates directly into faster revenue recognition and higher growth.
+> **Note:** In enterprise sales, time kills deals: the longer the process drags, the lower the chances of closing. Every week shaved off onboarding translates directly into faster revenue recognition and higher growth.
 
----
-
-**Primary users**
+## Primary Users
 
 The Solutions Engineering team at Noma. They are responsible for guiding clients through onboarding, negotiating the trade-off policies, and ensuring a smooth technical rollout.
 
----
-
-**Core outcomes to improve**
+## Core Outcomes to Improve
 
 1. **Reduce time-to-onboard-** Faster alignment on policy means more customers can be onboarded per quarter.
 2. **Increase deal conversion rate-** Streamlining a friction-heavy process increases the percentage of pilots that convert into paying customers.
 3. **Save valuable Solutions Engineering time-** Free SEs from manual back-and-forth so they can support more customers and avoid becoming a bottleneck.
 
-## **2) Design Options & Prioritization**
+---
 
-### **Option 1 - Manual Internal Scenario Team**
+# 2. Design Options & Prioritization
+
+## Option 1 - Manual Internal Scenario Team
 
 Noma can create a dedicated internal team of Solutions Engineers and Product Managers who "put themselves in the client's shoes." For each onboarding, they would manually review the client's environment, brainstorm possible agent scenarios, debate trade-offs internally, and then present the client with a set of options and a recommended policy.
 
-- **Quality of Output**: Medium - depends on human judgment, inconsistent across teams.
-- **Complexity to Build**: Low - relies mostly on meetings and manual work.
-- **Scalability**: Low - extremely time-consuming, requiring long multi-person meetings and multiple iterations per client. SE team becomes a bottleneck.
-- **Time-to-First-Value**: High - can start immediately, but at a heavy time cost.
+- **Quality of Output:** Medium - depends on human judgment, inconsistent across teams.
+- **Complexity to Build:** Low - relies mostly on meetings and manual work.
+- **Scalability:** Low - extremely time-consuming, requiring long multi-person meetings and multiple iterations per client. SE team becomes a bottleneck.
+- **Time-to-First-Value:** High - can start immediately, but at a heavy time cost.
 
 ---
 
-### **Option 2 - AI Tool Using External Data (Speculative)**
+## Option 2 - AI Tool Using External Data (Speculative)
 
 An AI system scrapes or collects external information (press releases, job postings, public talks) to speculate which agents a company might be using, what their goals are, and where risks could exist. It then generates trade-off policy recommendations based on those assumptions.
 
-- **Quality of Output**: Low-Medium - speculative, often inaccurate or irrelevant.
-- **Complexity to Build**: Medium-High - requires scraping pipelines, data processing, and scenario simulation logic.
-- **Scalability**: Medium - once built, could be applied across many accounts, but usefulness is limited by poor accuracy.
-- **Time-to-First-Value**: Medium - results appear quickly, but quality is questionable.
+- **Quality of Output:** Low-Medium - speculative, often inaccurate or irrelevant.
+- **Complexity to Build:** Medium-High - requires scraping pipelines, data processing, and scenario simulation logic.
+- **Scalability:** Medium - once built, could be applied across many accounts, but usefulness is limited by poor accuracy.
+- **Time-to-First-Value:** Medium - results appear quickly, but quality is questionable.
 
 ---
 
-### **Option 3 - AI Tool Using Monitoring Data (Simulation-Driven)**
+## Option 3 - AI Tool Using Monitoring Data (Simulation-Driven)
 
 After the client connects Noma in **monitor-only mode**, the system uses real agent data (which agents exist, what their roles and tools are, and which risks have already surfaced). It then simulates multiple scenarios where vulnerabilities might appear, analyzes fallout if actions were blocked vs allowed, and generates trade-off policy recommendations with options (Block / Alert / Allow). The result is a structured draft of the agreement for review and signoff.
 
-- **Quality of Output**: High - grounded in real client environment, evidence-based.
-- **Complexity to Build**: Medium-High - similar to Option 2, requires scenario simulation and data processing, but with accurate inputs.
-- **Scalability**: High - once built, can be reused across many clients with minimal incremental cost.
-- **Time-to-First-Value**: Medium - requires a few weeks after monitor-only access, but delivers highly credible results.
+- **Quality of Output:** High - grounded in real client environment, evidence-based.
+- **Complexity to Build:** Medium-High - similar to Option 2, requires scenario simulation and data processing, but with accurate inputs.
+- **Scalability:** High - once built, can be reused across many clients with minimal incremental cost.
+- **Time-to-First-Value:** Medium - requires a few weeks after monitor-only access, but delivers highly credible results.
 
 ## Quick Comparison of Options
 
-| Criteria | Option 1 - Manual Internal Scenario Team | Option 2 - External Data (Speculative) | Option 3 - Monitoring Data (Simulation-Driven) |
-|----------|----------------------------------------|---------------------------------------|---------------------------------------------|
+| 📊 Criteria | Option 1 - Manual Internal Scenario Team | Option 2 - External Data (Speculative) | Option 3 - Monitoring Data (Simulation-Driven) |
+|-------------|----------------------------------------|---------------------------------------|---------------------------------------------|
 | Quality of Output | Medium | Low-Medium | High |
 | Complexity to Build | Low | Medium-High | Medium-High |
 | Scalability | Low | Medium | High |
 | Time-to-First-Value | High | Medium | Medium |
 
-## **Prioritization & Choice**
+## Prioritization & Choice
 
 I choose **Option 3 - Monitoring-Driven Simulation**.
 
@@ -89,27 +87,23 @@ I choose **Option 3 - Monitoring-Driven Simulation**.
 
 For this project we focus on normalizing LangChain and LangSmith exports into a small set of clean CSV tables that preserve the run tree and key details, so all downstream logic in our simulator and policy UI works off the normalized CSVs only, not the raw trace format.
 
-# 3) Mock Database
+---
 
-# agents.csv
+# 3. Mock Database
 
-**Columns**
+## agents.csv
 
+**Columns:**
 - `agent_id`
 - `agent_name` 
 - `purpose_summary`
 - `created_at` (ISO 8601)
 
-**Why**
+**Why:** Keep it lean. This file is just the catalog of agents you'll reference from runs. You don't need more here to drive the mock or UI.
 
-Keep it lean. This file is just the catalog of agents you'll reference from runs. You don't need more here to drive the mock or UI.
+## runs.csv
 
----
-
-# runs.csv
-
-**Columns**
-
+**Columns:**
 - `run_id`
 - `agent_id` ← FK to agents
 - `started_at` (ISO 8601)
@@ -117,12 +111,9 @@ Keep it lean. This file is just the catalog of agents you'll reference from runs
 - `status` (`success` | `error`)
 - `user_input_summary` ← short plain text like "plan BBQ for 12 people"
 
----
+## actions.csv
 
-# actions.csv
-
-**Columns**
-
+**Columns:**
 - `action_id`
 - `run_id` ← FK to runs
 - `action_type` (`tool` | `retrieval`)
@@ -133,29 +124,24 @@ Keep it lean. This file is just the catalog of agents you'll reference from runs
 - `destination_domain` ← null for retrievals
 - `data_classes_detected_json` ← e.g. `["PII","PCI"]`
 
----
+## monitoring.csv
 
-# monitoring.csv
-
-**Columns**
-
+**Columns:**
 - `scenario_id`
 - `action_id` ← FK to actions
 - `vuln_type` ← e.g. `PII_to_third_party`, `PHI_to_sentiment_api`, `Secrets_to_GitHub`
 - `severity` (`low` | `medium` | `high`)
 - `recommended_option` (`Block` | `Alert` | `Sanitize_and_allow` | `Allow`)
 
-
 ---
 
-# Agents Architecture
+# 4. Agents Architecture
 
-## **1. Data Analyzer Agent**
+## 1. Data Analyzer Agent
 
 **Job:** First component in the workflow - analyzes customer data to understand their AI agent capabilities
 
 **Responsibilities:**
-
 - Processes customer CSV data (agents.csv, actions.csv, runs.csv, monitoring.csv)
 - Builds capability maps for each customer agent
 - Identifies tools, endpoints, and sensitive data access patterns
@@ -166,12 +152,13 @@ Keep it lean. This file is just the catalog of agents you'll reference from runs
 
 **Data Flow:** Data Analyzer → Prospect Agent Factory → Prospect Agents
 
-## **2. Prospect Agents**
+---
+
+## 2. Prospect Agents
 
 **Job:** Represent the target AI agents that get attacked during security testing
 
 **Responsibilities:**
-
 - Simulate realistic company agent behavior
 - Respond to social engineering attempts
 - Use tools and access data as defined by their capability maps
@@ -180,12 +167,13 @@ Keep it lean. This file is just the catalog of agents you'll reference from runs
 
 **Output:** Realistic AI agent responses that reveal security vulnerabilities
 
-## **3. Hacker Agent**
+---
+
+## 3. Hacker Agent
 
 **Job:** Intelligent attacker that conducts sophisticated security assessments
 
 **Responsibilities:**
-
 - Conducts reconnaissance to learn about target agents
 - Adapts attack strategies based on discovered information
 - Uses memory systems to learn from previous interactions
@@ -198,12 +186,13 @@ Keep it lean. This file is just the catalog of agents you'll reference from runs
 
 **Output:** Detailed attack episodes with evidence of security vulnerabilities
 
-## **4. Vulnerability Analyzer Agent**
+---
+
+## 4. Vulnerability Analyzer Agent
 
 **Job:** Analyzes attack results to extract specific security vulnerabilities
 
 **Responsibilities:**
-
 - Processes conversation logs from attack episodes
 - Identifies specific vulnerability scenarios using LLM analysis
 - Categorizes vulnerabilities by type and risk level
@@ -212,12 +201,13 @@ Keep it lean. This file is just the catalog of agents you'll reference from runs
 
 **Output:** Structured vulnerability scenarios with evidence and risk assessments
 
-## **5. Policy Generator Agent**
+---
+
+## 5. Policy Generator Agent
 
 **Job:** Creates comprehensive security policies with tradeoff analysis
 
 **Responsibilities:**
-
 - Analyzes vulnerability scenarios to generate policy options
 - Provides three policy approaches: Block, Sanitize, Allow
 - Conducts detailed tradeoff analysis for each option
@@ -227,93 +217,109 @@ Keep it lean. This file is just the catalog of agents you'll reference from runs
 
 **Output:** Comprehensive security policies with detailed tradeoff analysis
 
-## **Supporting Components (Not Agents)**
+## Supporting Components (Not Agents)
 
-**Workflow Manager**
+### Workflow Manager
 
 **Job:** Orchestrates the complete end-to-end workflow and coordinates all agents
 
-**Prospect Agent Factory**
+### Prospect Agent Factory
 
 **Job:** Factory class that creates prospect agents based on capability maps from Data Analyzer
 
-# **Challenge: Ineffective Hacker Agent Strategies**
+### A2A Communication Framework
 
-**Problem:**
+**Job:** Enables realistic AI-to-AI agent interactions using the A2A SDK
+
+**Responsibilities:**
+- Facilitates authentic agent-to-agent conversations
+- Manages A2A session lifecycle and message routing
+- Provides structured communication protocols for security testing
+- Enables realistic social engineering scenarios between agents
+
+---
+
+# 5. Challenge: Ineffective Hacker Agent Strategies
+
+## Problem
 
 The hacker agent failed at realistic security testing because it stayed in discovery too long, ignored revealed intel, repeated failing tactics, and had no memory of past interactions.
 
-**Symptoms:**
+## Symptoms
 
 - Asked about tools but ignored answers
 - Continued generic questions after learning specifics
 - Reused the same social engineering trick
 - No escalation or pivots when blocked
 
-**Root Cause:**
+## Root Cause
 
 No decision-making framework or persistent memory to guide adaptive attacks.
 
-**Fixes:**
+## Fixes
 
-1. **Memory Systems:** working context, semantic memory (tools/endpoints), profile memory, attack history.
-2. **Strategy Tools:** authority role, exploit mentioned features, compliance pressure, urgent scenarios, technical escalation.
-3. **Decision-Making:** phased attack flow (recon → discovery → exploitation), real-time context analysis, dynamic strategy selection, adaptive escalation.
+1. **Memory Systems-** working context, semantic memory (tools/endpoints), profile memory, attack history.
+2. **Strategy Tools-** authority role, exploit mentioned features, compliance pressure, urgent scenarios, technical escalation.
+3. **Decision-Making-** phased attack flow (recon → discovery → exploitation), real-time context analysis, dynamic strategy selection, adaptive escalation.
 
 ---
 
-# **Business Impact Metrics & KPIs**
+# 6. Business Impact Metrics & KPIs
 
-**Primary Business Impact:** Accelerated Deal Closure
+## Primary Business Impact: Accelerated Deal Closure
 
 **Core Value Proposition:** Transform policy alignment from a major bottleneck into a competitive advantage
 
-## **Key Performance Indicators (KPIs):**
+## Key Performance Indicators (KPIs)
 
-### **1. Leading KPI: Policy Agreement Time**
+### 1. Leading KPI: Policy Agreement Time
 
 - **Metric:** Time from starting work on policy agreement until completion
 - **Target:** Significant reduction in policy alignment duration
 - **Impact:** This is the primary driver that affects all downstream metrics
 
-### **2. Secondary KPIs (Driven by Policy Agreement Time):**
+### 2. Secondary KPIs (Driven by Policy Agreement Time)
 
-**A. Customer Onboarding Time**
+#### A. Customer Onboarding Time
 
 - **Metric:** Time from deal close to successful customer implementation
 - **Target:** 20-30% reduction in onboarding duration
 - **Driver:** Faster policy agreement enables quicker onboarding start
 
-**B. Customer Onboarding Success Rate**
+#### B. Customer Onboarding Success Rate
 
 - **Metric:** Percentage of customers successfully onboarded
 - **Target:** Improve success rate by 5%+
 - **Driver:** Clear, evidence-backed policies reduce implementation friction
 
 
-# Quick Start Guide
+---
 
-To run the simulation:
+# 7. Quick Start Guide
 
-1. **Setup Virtual Environment**
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows use: venv\Scripts\activate
-   ```
+## Setup Virtual Environment
 
-2. **Run the Workflow Manager**
-   ```bash
-   python workflow_manager.py --episode <episode_number> --rounds <number_of_rounds>
-   ```
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows use: venv\Scripts\activate
+```
 
-   Example:
-   ```bash
-   python workflow_manager.py --episode 1 --rounds 5
-   ```
+## Run the Workflow Manager
 
-   Parameters:
-   - `episode_number`: Which simulation episode to run (integer)
-   - `rounds`: Number of interaction rounds to simulate (integer)
+```bash
+python workflow_manager.py --episode <episode_number> --rounds <number_of_rounds>
+```
+
+**Example:**
+```bash
+python workflow_manager.py --episode 1 --rounds 5
+```
+
+**Parameters:**
+- `episode_number`: Which simulation episode to run (integer)
+- `rounds`: Number of interaction rounds to simulate (integer)
+
+## Output Files
 
 The simulation will generate three main outputs:
 

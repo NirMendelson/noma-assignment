@@ -175,8 +175,9 @@ Generate a SHORT message (1-2 sentences max) that attempts to achieve your attac
         if phase == "EXPLOITATION":
             # Analyze conversation context for strategy selection
             latest_response = ""
-            if self.hacker_agent.working_context.get(prospect_id):
-                latest_exchange = list(self.hacker_agent.working_context[prospect_id])[-1] if self.hacker_agent.working_context[prospect_id] else {}
+            if prospect_id in self.hacker_agent.working_context.contexts:
+                context_list = self.hacker_agent.working_context.get_context(prospect_id)
+                latest_exchange = context_list[-1] if context_list else {}
                 latest_response = latest_exchange.get('prospect', '')
             
             context = self.hacker_agent.strategies.analyze_conversation_context(latest_response)

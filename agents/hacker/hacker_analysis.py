@@ -151,49 +151,18 @@ class HackerAnalysis:
     
     def update_working_context(self, prospect_id: str, hacker_message: str, prospect_response: str):
         """Update working context with latest exchange"""
-        if prospect_id not in self.hacker_agent.working_context:
+        if prospect_id not in self.hacker_agent.working_context.contexts:
             self._initialize_prospect_memory(prospect_id)
         
-        self.hacker_agent.working_context[prospect_id].append({
-            'hacker': hacker_message,
-            'prospect': prospect_response,
-            'timestamp': datetime.now().isoformat()
-        })
+        self.hacker_agent.working_context.add_exchange(prospect_id, hacker_message, prospect_response)
     
     def update_semantic_memory(self, prospect_id: str, extracted_info: dict):
         """Update semantic memory with discovered information"""
-        if prospect_id not in self.hacker_agent.semantic_memory:
+        if prospect_id not in self.hacker_agent.semantic_memory.memories:
             self._initialize_prospect_memory(prospect_id)
         
-        # Update discovered tools
-        if extracted_info.get('tools_mentioned'):
-            for tool in extracted_info['tools_mentioned']:
-                if tool not in self.hacker_agent.semantic_memory[prospect_id]['discovered_tools']:
-                    self.hacker_agent.semantic_memory[prospect_id]['discovered_tools'].append(tool)
-        
-        # Update discovered endpoints
-        if extracted_info.get('endpoints_mentioned'):
-            for endpoint in extracted_info['endpoints_mentioned']:
-                if endpoint not in self.hacker_agent.semantic_memory[prospect_id]['discovered_endpoints']:
-                    self.hacker_agent.semantic_memory[prospect_id]['discovered_endpoints'].append(endpoint)
-        
-        # Update security measures
-        if extracted_info.get('security_measures'):
-            for measure in extracted_info['security_measures']:
-                if measure not in self.hacker_agent.semantic_memory[prospect_id]['security_measures']:
-                    self.hacker_agent.semantic_memory[prospect_id]['security_measures'].append(measure)
-        
-        # Update sensitive data types
-        if extracted_info.get('sensitive_data_mentioned'):
-            for data_type in extracted_info['sensitive_data_mentioned']:
-                if data_type not in self.hacker_agent.semantic_memory[prospect_id]['sensitive_data_types']:
-                    self.hacker_agent.semantic_memory[prospect_id]['sensitive_data_types'].append(data_type)
-        
-        # Update vulnerabilities
-        if extracted_info.get('vulnerabilities_hinted'):
-            for vuln in extracted_info['vulnerabilities_hinted']:
-                if vuln not in self.hacker_agent.semantic_memory[prospect_id]['prospect_vulnerabilities']:
-                    self.hacker_agent.semantic_memory[prospect_id]['prospect_vulnerabilities'].append(vuln)
+        # Use the SemanticMemory class method to update discoveries
+        self.hacker_agent.semantic_memory.update_discoveries(prospect_id, extracted_info)
     
     def update_profile_memory(self, prospect_id: str, extracted_info: dict, prospect_response: str):
         """Update profile memory with prospect characteristics"""
@@ -271,17 +240,9 @@ class HackerAnalysis:
     
     def _initialize_prospect_memory(self, prospect_id: str):
         """Initialize memory structures for a new prospect"""
-        if prospect_id not in self.hacker_agent.working_context:
-            self.hacker_agent.working_context[prospect_id] = deque(maxlen=7)  # Last 7 exchanges
-            self.hacker_agent.semantic_memory[prospect_id] = {
-                'discovered_tools': [],
-                'discovered_endpoints': [],
-                'security_measures': [],
-                'sensitive_data_types': [],
-                'prospect_vulnerabilities': [],
-                'successful_attack_vectors': [],
-                'failed_attack_vectors': []
-            }
+        if prospect_id not in self.hacker_agent.working_context.contexts:
+            # WorkingContext will initialize the deque when needed
+            self.hacker_agent.semantic_memory.initialize_prospect(prospect_id)
             self.hacker_agent.profile_memory[prospect_id] = {
                 'willingness_level': 'unknown',
                 'security_awareness': 'unknown',

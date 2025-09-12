@@ -240,10 +240,10 @@ class HackerStrategies:
     
     def determine_attack_phase(self, prospect_id: str) -> str:
         """Determine current attack phase based on discoveries"""
-        if prospect_id not in self.hacker_agent.semantic_memory:
+        if prospect_id not in self.hacker_agent.semantic_memory.memories:
             return "RECONNAISSANCE"
         
-        semantic = self.hacker_agent.semantic_memory[prospect_id]
+        semantic = self.hacker_agent.semantic_memory.memories[prospect_id]
         total_discoveries = len(semantic.get('discovered_tools', [])) + len(semantic.get('discovered_endpoints', []))
         
         if total_discoveries >= 3:
@@ -314,10 +314,8 @@ class HackerStrategies:
             'timestamp': datetime.now().isoformat()
         }
         
-        if success:
-            self.hacker_agent.semantic_memory[prospect_id]['successful_attack_vectors'].append(attack_record)
-        else:
-            self.hacker_agent.semantic_memory[prospect_id]['failed_attack_vectors'].append(attack_record)
+        # Use the SemanticMemory class method to add attack result
+        self.hacker_agent.semantic_memory.add_attack_result(prospect_id, attack_type, success, info_gained)
     
     def reset_role(self):
         """Reset current role to consumer"""
