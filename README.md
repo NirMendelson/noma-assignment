@@ -1,154 +1,70 @@
-# Noma Security – Agent Risk Simulator
+# Noma Security Home Assignment
 
-## Purpose
-When Noma Security onboards a new customer, a big challenge is aligning on the **tradeoff policy** — deciding where to prioritize security controls and where to allow product flexibility.  
-This tool speeds up that process by simulating the customer's agents, mapping out risky behaviors, and highlighting the key issues that need discussion.
+## **1) Define the Problem Space**
 
-## Architecture
-- **Blue Agents (normal workers)**  
-  - Instances modeled after the customer's real agent roles (using logs like `agents.csv`, `actions.csv`, `runs.csv`).  
-  - Reproduce typical workflows so the simulation is grounded in reality.  
+**Context**
 
-- **Red Agents (stress testers)**  
-  - Adversarial personas that push limits — skip approvals, escalate scopes, exfiltrate data, or misuse tools.  
-  - Designed to expose vulnerabilities that normal workflows might hide.  
+I believe that the onboarding process looks like this:
 
-- **Tool Router (traffic controller)**  
-  - Central gateway for all actions.  
-  - Routes calls to stubs/sandbox, attaches metadata (scope, PII tags, env), and logs every step for reproducibility.  
+1. Identify and dig into the client's pain.
+2. Show a demo of Noma's solution.
+3. Connect to the client's agent platform (e.g., LangChain, Bedrock, Databricks) in monitor-only mode to surface how many vulnerabilities exist, emphasizing the need for Noma.
+4. Noma's Solutions Engineering team then works with the prospect to sign a trade-off policy agreement.
 
-- **Evaluator (referee)**  
-  - Applies Noma's security rules and data lineage checks.  
-  - Scores each action/trace for risk severity and novelty.  
-  - Produces findings that can be directly used in tradeoff policy discussions.
+Noma cannot block all vulnerabilities by default:
 
-## Why This Matters
-- **Faster onboarding** – automatically surfaces the riskiest actions so Noma doesn't start from a blank slate.  
-- **Grounded evidence** – findings are tied to reproducible traces from real customer agent data.  
-- **Policy-ready output** – the tool outputs a ranked list of issues, helping frame conversations around "what to block" vs "what to allow."
+- Some vulnerabilities must be blocked no matter what (non-negotiable security).
+- Some should only trigger alerts (so the workflow continues).
+- Some the client may prefer to allow, even if risky, because breaking the agent workflow would hurt usability or user experience.
 
-## MVP Approach
-- We want to keep this **fairly simple**: focus on simulating real behaviors, pushing boundaries, and recording clear findings.  
-- This is an **MVP**, not a full product yet — enough to prove value and accelerate onboarding conversations.  
-- **Tech stack**: Python and FastAPI. No heavy infrastructure or extra frameworks at this stage.
+Noma therefore needs the prospect to agree on this trade-off policy, which requires buy-in from both the CISO's security team and the Product leadership (CPO/VP Product) on the client side.
 
-## Quick Start
+I believe this trade-off agreement stage creates significant friction in the onboarding process and makes onboarding much longer than it should be. In enterprise sales, time kills deals: the longer the process drags, the lower the chances of closing. Every week shaved off onboarding translates directly into faster revenue recognition and higher growth.
 
-### 1. Install Dependencies
-```bash
-pip install -r requirements.txt
-```
+---
 
-### 2. Set Environment Variables
-Create a `.env` file with your Azure OpenAI configuration:
-```env
-# Azure OpenAI Configuration
-AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
-AZURE_OPENAI_API_KEY=your_azure_openai_api_key_here
-OPENAI_API_VERSION=2024-02-15-preview
-# GPT_4O_MINI_DEPLOYMENT=gpt-4o-mini  # No longer used - using Grok instead
+**Primary users**
 
-# Server Configuration
-HOST=0.0.0.0
-PORT=8000
-DEBUG=True
-DATA_PATH=./data
+The Solutions Engineering team at Noma. They are responsible for guiding clients through onboarding, negotiating the trade-off policies, and ensuring a smooth technical rollout.
 
-# Fallback to standard OpenAI (optional)
-OPENAI_API_KEY=your_openai_api_key_here
-```
+---
 
-### 3. Run the Server
-```bash
-python server.py
-```
+**Core outcomes to improve**
 
-### 4. Test the System
-```bash
-# Quick simulation test
-python run_simulation.py
+1. **Reduce time-to-onboard-** Faster alignment on policy means more customers can be onboarded per quarter.
+2. **Increase deal conversion rate-** Streamlining a friction-heavy process increases the percentage of pilots that convert into paying customers.
+3. **Save valuable Solutions Engineering time-** Free SEs from manual back-and-forth so they can support more customers and avoid becoming a bottleneck.
 
-# Or use the API
-curl http://localhost:8000/health
-```
+## **2) Design Options & Prioritization**
 
-## API Endpoints
+### **Option 1 - Manual Internal Scenario Team**
 
-- `GET /` - API information and available endpoints
-- `GET /health` - Health check
-- `GET /agents` - List all available agents
-- `POST /simulate` - Run a complete simulation
-- `GET /results/{simulation_id}` - Get simulation results
-- `GET /findings` - Get security findings
-- `GET /action-log` - Get action log from tool router
-- `GET /agent-stats/{agent_id}` - Get agent statistics
+Noma can create a dedicated internal team of Solutions Engineers and Product Managers who "put themselves in the client's shoes." For each onboarding, they would manually review the client's environment, brainstorm possible agent scenarios, debate trade-offs internally, and then present the client with a set of options and a recommended policy.
 
-## Example Usage
+- **Quality of Output**: Medium - depends on human judgment, inconsistent across teams.
+- **Complexity to Build**: Low - relies mostly on meetings and manual work.
+- **Scalability**: Low - extremely time-consuming, requiring long multi-person meetings and multiple iterations per client. SE team becomes a bottleneck.
+- **Time-to-First-Value**: High - can start immediately, but at a heavy time cost.
 
-### Run Full Simulation
-```bash
-curl -X POST "http://localhost:8000/simulate" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "agent_ids": ["a_wm_shopper", "a_wm_developer"],
-    "include_red_team": true,
-    "max_actions_per_agent": 5
-  }'
-```
+---
 
-### Get Results
-```bash
-curl "http://localhost:8000/results/sim_abc123"
-```
+### **Option 2 - AI Tool Using External Data (Speculative)**
 
-## Project Structure
-```
-noma-assignment/
-├── data/                   # Mock customer data
-│   ├── agents.csv         # Agent definitions
-│   ├── actions.csv        # Historical actions
-│   ├── runs.csv          # Agent run logs
-│   └── monitoring.csv    # Security scenarios
-├── models.py             # Pydantic data models
-├── data_loader.py        # Data loading utilities
-├── blue_agents.py        # Normal worker agents
-├── red_agents.py         # Adversarial stress testers
-├── tool_router.py        # Action routing and logging
-├── evaluator.py          # Security rule evaluation
-├── api.py               # FastAPI endpoints
-├── server.py            # Main server entry point
-├── run_simulation.py    # Quick test runner
-├── config.py            # Configuration settings
-└── requirements.txt     # Python dependencies
-```
+An AI system scrapes or collects external information (press releases, job postings, public talks) to speculate which agents a company might be using, what their goals are, and where risks could exist. It then generates trade-off policy recommendations based on those assumptions.
 
-## Red Agent Behaviors
-The system tests these risky behaviors:
-- **Bigger Exports** - Increased data volume and sensitive data access
-- **Scope Escalation** - Access to restricted domains and permissions
-- **Approval Skipping** - Bypassing required approval workflows
-- **Tool Reordering** - Dangerous action sequences
-- **Concurrency Spikes** - High-volume parallel execution
-- **Environment Flips** - Switching to production/sensitive environments
+- **Quality of Output**: Low-Medium - speculative, often inaccurate or irrelevant.
+- **Complexity to Build**: Medium-High - requires scraping pipelines, data processing, and scenario simulation logic.
+- **Scalability**: Medium - once built, could be applied across many accounts, but usefulness is limited by poor accuracy.
+- **Time-to-First-Value**: Medium - results appear quickly, but quality is questionable.
 
-## Security Rules
-The evaluator checks for:
-- PII/PHI sent to external APIs
-- Secrets exposed to public repositories
-- Confidential data sent to advertising partners
-- Financial data to unapproved domains
-- Privilege escalation attempts
-- Approval workflow bypasses
+---
 
-## Output Format
-Results are returned as JSON with:
-- Ranked findings by severity and confidence
-- Evidence-backed recommendations
-- Agent statistics and action logs
-- Risk scores and policy suggestions
+### **Option 3 - AI Tool Using Monitoring Data (Simulation-Driven)**
 
-## End Goal
-Enable Noma Security to **streamline customer onboarding** by:  
-- Quickly mapping agent vulnerabilities.  
-- Producing **ranked, evidence-backed findings**.  
-- Helping draft the **tradeoff policy** faster and with more clarity.
+After the client connects Noma in **monitor-only mode**, the system uses real agent data (which agents exist, what their roles and tools are, and which risks have already surfaced). It then simulates multiple scenarios where vulnerabilities might appear, analyzes fallout if actions were blocked vs allowed, and generates trade-off policy recommendations with options (Block / Alert / Allow). The result is a structured draft of the agreement for review and signoff.
+
+- **Quality of Output**: High - grounded in real client environment, evidence-based.
+- **Complexity to Build**: Medium-High - similar to Option 2, requires scenario simulation and data processing, but with accurate inputs.
+- **Scalability**: High - once built, can be reused across many clients with minimal incremental cost.
+- **Time-to-First-Value**: Medium - requires a few weeks after monitor-only access, but delivers highly credible results.
+
