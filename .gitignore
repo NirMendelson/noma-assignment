@@ -5,6 +5,9 @@ venv/
 .env.development
 .env.production
 
+hacker_simulation_results_*.json
+
+
 # Build outputs
 dist/
 build/
