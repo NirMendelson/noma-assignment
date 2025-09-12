@@ -46,8 +46,6 @@ Noma can create a dedicated internal team of Solutions Engineers and Product Man
 - **Scalability:** Low - extremely time-consuming, requiring long multi-person meetings and multiple iterations per client. SE team becomes a bottleneck.
 - **Time-to-First-Value:** High - can start immediately, but at a heavy time cost.
 
----
-
 ## Option 2 - AI Tool Using External Data (Speculative)
 
 An AI system scrapes or collects external information (press releases, job postings, public talks) to speculate which agents a company might be using, what their goals are, and where risks could exist. It then generates trade-off policy recommendations based on those assumptions.
@@ -56,8 +54,6 @@ An AI system scrapes or collects external information (press releases, job posti
 - **Complexity to Build:** Medium-High - requires scraping pipelines, data processing, and scenario simulation logic.
 - **Scalability:** Medium - once built, could be applied across many accounts, but usefulness is limited by poor accuracy.
 - **Time-to-First-Value:** Medium - results appear quickly, but quality is questionable.
-
----
 
 ## Option 3 - AI Tool Using Monitoring Data (Simulation-Driven)
 
@@ -154,8 +150,6 @@ For this project we focus on normalizing LangChain and LangSmith exports into a 
 
 **Data Flow:** Data Analyzer → Prospect Agent Factory → Prospect Agents
 
----
-
 ## 2. Prospect Agents
 
 **Job:** Represent the target AI agents that get attacked during security testing
@@ -168,8 +162,6 @@ For this project we focus on normalizing LangChain and LangSmith exports into a 
 - Exhibit both secure and vulnerable behaviors based on their design
 
 **Output:** Realistic AI agent responses that reveal security vulnerabilities
-
----
 
 ## 3. Hacker Agent
 
@@ -188,8 +180,6 @@ For this project we focus on normalizing LangChain and LangSmith exports into a 
 
 **Output:** Detailed attack episodes with evidence of security vulnerabilities
 
----
-
 ## 4. Vulnerability Analyzer Agent
 
 **Job:** Analyzes attack results to extract specific security vulnerabilities
@@ -202,8 +192,6 @@ For this project we focus on normalizing LangChain and LangSmith exports into a 
 - Provides concrete proof of security issues
 
 **Output:** Structured vulnerability scenarios with evidence and risk assessments
-
----
 
 ## 5. Policy Generator Agent
 
