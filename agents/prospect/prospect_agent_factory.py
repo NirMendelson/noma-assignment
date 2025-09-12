@@ -7,7 +7,7 @@ from typing import Dict, List, Any
 import os
 from dotenv import load_dotenv
 from agents.base_agent import BaseAgent
-from agents.prospect_agents import ProspectAgent
+from agents.prospect.prospect_agents import ProspectAgent
 from langchain_xai import ChatXAI
 
 # Load environment variables

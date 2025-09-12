@@ -5,7 +5,7 @@ Workflow Episodes - Handles attack episode execution and management
 
 from datetime import datetime
 from typing import Dict, List, Any
-from agents.prospect_agents import ProspectAgent
+from agents.prospect.prospect_agents import ProspectAgent
 
 class WorkflowEpisodes:
     """Handles attack episode execution and management"""

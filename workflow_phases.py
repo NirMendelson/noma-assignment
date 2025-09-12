@@ -8,8 +8,8 @@ import os
 from datetime import datetime
 from typing import Dict, List, Any
 from agents.data_analyzer import get_data_analyzer
-from agents.prospect_agent_factory import get_prospect_agent_factory
-from agents.hacker_agent import get_hacker_agent
+from agents.prospect.prospect_agent_factory import get_prospect_agent_factory
+from agents.hacker.hacker_agent import get_hacker_agent
 from agents.vulnerability_analyzer import get_vulnerability_analyzer
 from agents.policy_generator import get_policy_generator
 from generate_policy_pdf_from_analysis import generate_policy_pdf_from_analysis
@@ -132,6 +132,27 @@ class WorkflowPhases:
             if "hacker_thoughts" in episode:
                 all_hacker_thoughts.extend(episode["hacker_thoughts"])
         
+        # Create serializable attack episodes (remove ProspectAgent objects)
+        serializable_episodes = []
+        for episode in self.workflow.results["attack_episodes"]:
+            serializable_episode = {
+                "episode_id": episode.get("episode_id"),
+                "prospect_agent": episode.get("prospect_agent"),
+                "prospect_id": episode.get("prospect_id"),
+                "session_id": episode.get("session_id"),
+                "start_time": episode.get("start_time"),
+                "end_time": episode.get("end_time"),
+                "conversation_log": episode.get("conversation_log", []),
+                "success": episode.get("success", False),
+                "evidence": episode.get("evidence", ""),
+                "decision": episode.get("decision", "SWITCH_AGENT"),
+                "hacker_memory": episode.get("hacker_memory", {}),
+                "hacker_thoughts": episode.get("hacker_thoughts", []),
+                "a2a_session_data": episode.get("a2a_session_data", {}),
+                "error": episode.get("error")
+            }
+            serializable_episodes.append(serializable_episode)
+        
         export_data = {
             "workflow_summary": {
                 "total_episodes": len(self.workflow.results["attack_episodes"]),
@@ -145,7 +166,7 @@ class WorkflowPhases:
             "hacker_memories": self.workflow.results["hacker_memories"],
             "detailed_hacker_memory": detailed_hacker_memory,
             "hacker_thoughts": all_hacker_thoughts,
-            "attack_episodes": self.workflow.results["attack_episodes"]
+            "attack_episodes": serializable_episodes
         }
         
         # Save to file
