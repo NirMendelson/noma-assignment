@@ -83,7 +83,14 @@ def generate_policy_pdf_from_analysis(analysis_file: str, output_file: str = Non
     # Group scenarios by agent
     agent_scenarios = {}
     for analysis in policy_data['policy_analyses']:
-        agent_name = analysis['original_scenario'].get('prospect_agent', 'Unknown Agent')
+        prospect_agent = analysis['original_scenario'].get('prospect_agent', 'Unknown Agent')
+        
+        # Handle both string and dict formats for prospect_agent
+        if isinstance(prospect_agent, dict):
+            agent_name = prospect_agent.get('name', prospect_agent.get('agent_id', 'Unknown Agent'))
+        else:
+            agent_name = str(prospect_agent)
+        
         if agent_name not in agent_scenarios:
             agent_scenarios[agent_name] = []
         agent_scenarios[agent_name].append(analysis)

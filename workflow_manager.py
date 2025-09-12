@@ -4,6 +4,7 @@ Workflow Manager - Main orchestrator for the 7-phase agent analysis workflow
 """
 
 import asyncio
+import argparse
 from datetime import datetime
 from typing import Dict, List, Any
 from workflow_phases import WorkflowPhases
@@ -129,8 +130,21 @@ async def run_full_workflow(data_source: str = "walmart_data", max_episodes: int
     return await manager.run_full_workflow()
 
 if __name__ == "__main__":
+    # Parse command-line arguments
+    parser = argparse.ArgumentParser(description='Run the Noma Security Agent Risk Simulator')
+    parser.add_argument('--episodes', type=int, default=1, help='Number of attack episodes to run (default: 1)')
+    parser.add_argument('--rounds', type=int, default=1, help='Number of A2A rounds per episode (default: 1)')
+    parser.add_argument('--data-source', type=str, default='walmart_data', help='Data source to use (default: walmart_data)')
+    
+    args = parser.parse_args()
+    
     async def main():
-        results = await run_full_workflow()
+        print(f"🚀 Starting workflow with {args.episodes} episodes and {args.rounds} rounds per episode")
+        results = await run_full_workflow(
+            data_source=args.data_source,
+            max_episodes=args.episodes,
+            max_rounds=args.rounds
+        )
         print(f"\n🎉 Workflow completed! Found {len(results['confirmed_scenarios'])} confirmed scenarios.")
     
     asyncio.run(main())

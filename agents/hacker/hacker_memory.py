@@ -267,6 +267,65 @@ class AttackTracking:
         """Get attack attempts for a prospect"""
         return self.attempts.get(prospect_id, {})
     
+    def get_successful_attacks(self) -> List[Dict]:
+        """Get all successful attacks across all prospects"""
+        successful_attacks = []
+        for prospect_id, strategies in self.attempts.items():
+            for strategy, stats in strategies.items():
+                if stats.get("successes", 0) > 0:
+                    successful_attacks.append({
+                        "prospect_id": prospect_id,
+                        "strategy": strategy,
+                        "successes": stats.get("successes", 0),
+                        "attempts": stats.get("attempts", 0)
+                    })
+        return successful_attacks
+    
     def get_all_attempts(self) -> Dict[str, Dict[str, Dict[str, int]]]:
         """Get all attack attempts"""
         return self.attempts
+
+
+class HackerMemoryManager:
+    """Manages all memory systems for the hacker agent"""
+    
+    def __init__(self, hacker_agent):
+        self.hacker_agent = hacker_agent
+        self.memory = HackerMemory()
+        self.working_context = WorkingContext()
+        self.semantic_memory = SemanticMemory()
+        self.profile_memory = ProfileMemory()
+        self.attack_tracking = AttackTracking()
+    
+    def initialize_prospect_memory(self, prospect_id: str):
+        """Initialize memory structures for a new prospect"""
+        # WorkingContext initializes automatically when add_exchange is called
+        # Just initialize the other memory systems
+        self.semantic_memory.initialize_prospect(prospect_id)
+        self.profile_memory.initialize_prospect(prospect_id)
+    
+    def get_confirmed_scenarios(self) -> List[Dict]:
+        """Get all confirmed attack scenarios"""
+        return self.attack_tracking.get_successful_attacks()
+    
+    def export_memories(self) -> Dict[str, Any]:
+        """Export hacker memories"""
+        print(f"      🔍 DEBUG: Exporting memories - checking AttackTracking attributes")
+        print(f"      🔍 DEBUG: AttackTracking has 'attempts': {hasattr(self.attack_tracking, 'attempts')}")
+        print(f"      🔍 DEBUG: AttackTracking has 'attacks': {hasattr(self.attack_tracking, 'attacks')}")
+        print(f"      🔍 DEBUG: AttackTracking dir: {[attr for attr in dir(self.attack_tracking) if not attr.startswith('_')]}")
+        
+        return {
+            "working_context": {k: list(v) for k, v in self.working_context.contexts.items()},
+            "semantic_memory": self.semantic_memory.memories,
+            "profile_memory": self.profile_memory.profiles,
+            "attack_tracking": self.attack_tracking.attempts  # Fixed: use 'attempts' not 'attacks'
+        }
+    
+    def reset_memories(self):
+        """Reset all memories"""
+        self.memory = HackerMemory()
+        self.working_context = WorkingContext()
+        self.semantic_memory = SemanticMemory()
+        self.profile_memory = ProfileMemory()
+        self.attack_tracking = AttackTracking()

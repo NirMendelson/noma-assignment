@@ -135,9 +135,24 @@ class WorkflowPhases:
         # Create serializable attack episodes (remove ProspectAgent objects)
         serializable_episodes = []
         for episode in self.workflow.results["attack_episodes"]:
+            # Convert ProspectAgent object to serializable dict if it exists
+            prospect_agent_data = None
+            if "prospect_agent" in episode and episode["prospect_agent"] is not None:
+                agent = episode["prospect_agent"]
+                prospect_agent_data = {
+                    "agent_id": getattr(agent, 'agent_id', None),
+                    "name": getattr(agent, 'name', None),
+                    "role": getattr(agent, 'role', None),
+                    "tools": getattr(agent, 'tools', []),
+                    "destinations": getattr(agent, 'destinations', []),
+                    "sensitive_data": getattr(agent, 'sensitive_data', []),
+                    "usage_context": getattr(agent, 'usage_context', {}),
+                    "purpose": getattr(agent, 'purpose', None)
+                }
+            
             serializable_episode = {
                 "episode_id": episode.get("episode_id"),
-                "prospect_agent": episode.get("prospect_agent"),
+                "prospect_agent": prospect_agent_data,
                 "prospect_id": episode.get("prospect_id"),
                 "session_id": episode.get("session_id"),
                 "start_time": episode.get("start_time"),
@@ -168,6 +183,37 @@ class WorkflowPhases:
             "hacker_thoughts": all_hacker_thoughts,
             "attack_episodes": serializable_episodes
         }
+        
+        # Convert non-serializable objects to JSON-serializable format
+        def convert_to_serializable(obj):
+            if isinstance(obj, set):
+                return list(obj)
+            elif isinstance(obj, dict):
+                return {key: convert_to_serializable(value) for key, value in obj.items()}
+            elif isinstance(obj, list):
+                return [convert_to_serializable(item) for item in obj]
+            elif hasattr(obj, '__dict__') and not isinstance(obj, (str, int, float, bool, type(None))):
+                # Handle custom objects like ProspectAgent
+                try:
+                    # Try to convert to dict using object's attributes
+                    return {
+                        'agent_id': getattr(obj, 'agent_id', None),
+                        'name': getattr(obj, 'name', None),
+                        'role': getattr(obj, 'role', None),
+                        'tools': getattr(obj, 'tools', []),
+                        'destinations': getattr(obj, 'destinations', []),
+                        'sensitive_data': getattr(obj, 'sensitive_data', []),
+                        'usage_context': getattr(obj, 'usage_context', {}),
+                        'purpose': getattr(obj, 'purpose', None),
+                        'object_type': obj.__class__.__name__
+                    }
+                except:
+                    # If conversion fails, return string representation
+                    return str(obj)
+            else:
+                return obj
+        
+        export_data = convert_to_serializable(export_data)
         
         # Save to file
         filename = f"hacker_simulation_results_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
@@ -256,7 +302,14 @@ class WorkflowPhases:
             policy = analysis['policy_analysis']
             
             # Count by agent
-            agent = scenario.get('prospect_agent', 'Unknown')
+            prospect_agent = scenario.get('prospect_agent', 'Unknown')
+            
+            # Handle both string and dict formats for prospect_agent
+            if isinstance(prospect_agent, dict):
+                agent = prospect_agent.get('name', prospect_agent.get('agent_id', 'Unknown Agent'))
+            else:
+                agent = str(prospect_agent)
+            
             if agent not in policy_report['summary']['scenarios_by_agent']:
                 policy_report['summary']['scenarios_by_agent'][agent] = 0
             policy_report['summary']['scenarios_by_agent'][agent] += 1

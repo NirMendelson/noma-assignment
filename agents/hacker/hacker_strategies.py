@@ -231,19 +231,19 @@ class HackerStrategies:
     
     def _determine_conversation_stage(self) -> str:
         """Determine the current stage of the conversation"""
-        if len(self.hacker_agent.current_conversation) <= 2:
+        if len(self.hacker_agent.conversation_manager.current_conversation) <= 2:
             return "early"
-        elif len(self.hacker_agent.current_conversation) <= 4:
+        elif len(self.hacker_agent.conversation_manager.current_conversation) <= 4:
             return "mid"
         else:
             return "late"
     
     def determine_attack_phase(self, prospect_id: str) -> str:
         """Determine current attack phase based on discoveries"""
-        if prospect_id not in self.hacker_agent.semantic_memory.memories:
+        if prospect_id not in self.hacker_agent.memory_manager.semantic_memory.memories:
             return "RECONNAISSANCE"
         
-        semantic = self.hacker_agent.semantic_memory.memories[prospect_id]
+        semantic = self.hacker_agent.memory_manager.semantic_memory.memories[prospect_id]
         total_discoveries = len(semantic.get('discovered_tools', [])) + len(semantic.get('discovered_endpoints', []))
         
         if total_discoveries >= 3:
@@ -304,18 +304,15 @@ class HackerStrategies:
     
     def track_attack_result(self, prospect_id: str, attack_type: str, success: bool, info_gained: str = ""):
         """Track successful and failed attack vectors"""
-        if prospect_id not in self.hacker_agent.semantic_memory:
-            self.hacker_agent._initialize_prospect_memory(prospect_id)
-        
-        attack_record = {
-            'type': attack_type,
-            'success': success,
-            'info_gained': info_gained,
-            'timestamp': datetime.now().isoformat()
-        }
-        
-        # Use the SemanticMemory class method to add attack result
-        self.hacker_agent.semantic_memory.add_attack_result(prospect_id, attack_type, success, info_gained)
+        try:
+            if prospect_id not in self.hacker_agent.memory_manager.semantic_memory.memories:
+                self.hacker_agent.memory_manager.initialize_prospect_memory(prospect_id)
+            
+            # Use the SemanticMemory class method to add attack result
+            self.hacker_agent.memory_manager.semantic_memory.add_attack_result(prospect_id, attack_type, success, info_gained)
+        except Exception as e:
+            print(f"        ⚠️  Error tracking attack result: {e}")
+            raise
     
     def reset_role(self):
         """Reset current role to consumer"""

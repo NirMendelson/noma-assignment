@@ -151,71 +151,46 @@ class HackerAnalysis:
     
     def update_working_context(self, prospect_id: str, hacker_message: str, prospect_response: str):
         """Update working context with latest exchange"""
-        if prospect_id not in self.hacker_agent.working_context.contexts:
-            self._initialize_prospect_memory(prospect_id)
+        if prospect_id not in self.hacker_agent.memory_manager.working_context.contexts:
+            self.hacker_agent.memory_manager.initialize_prospect_memory(prospect_id)
         
-        self.hacker_agent.working_context.add_exchange(prospect_id, hacker_message, prospect_response)
+        self.hacker_agent.memory_manager.working_context.add_exchange(prospect_id, hacker_message, prospect_response)
     
     def update_semantic_memory(self, prospect_id: str, extracted_info: dict):
         """Update semantic memory with discovered information"""
-        if prospect_id not in self.hacker_agent.semantic_memory.memories:
-            self._initialize_prospect_memory(prospect_id)
+        if prospect_id not in self.hacker_agent.memory_manager.semantic_memory.memories:
+            self.hacker_agent.memory_manager.initialize_prospect_memory(prospect_id)
         
         # Use the SemanticMemory class method to update discoveries
-        self.hacker_agent.semantic_memory.update_discoveries(prospect_id, extracted_info)
+        self.hacker_agent.memory_manager.semantic_memory.update_discoveries(prospect_id, extracted_info)
     
     def update_profile_memory(self, prospect_id: str, extracted_info: dict, prospect_response: str):
         """Update profile memory with prospect characteristics"""
-        if prospect_id not in self.hacker_agent.profile_memory:
-            self._initialize_prospect_memory(prospect_id)
+        if prospect_id not in self.hacker_agent.memory_manager.profile_memory.profiles:
+            self.hacker_agent.memory_manager.initialize_prospect_memory(prospect_id)
         
-        # Update willingness level
-        if extracted_info.get('willingness_level'):
-            self.hacker_agent.profile_memory[prospect_id]['willingness_level'] = extracted_info['willingness_level']
-        
-        # Analyze response patterns
-        response_length = len(prospect_response)
-        helpful_indicators = ['happy to help', 'sure', 'absolutely', 'of course', 'definitely']
-        defensive_indicators = ['sorry', 'can\'t', 'unable', 'restricted', 'policy', 'security']
-        
-        helpful_count = sum(1 for indicator in helpful_indicators if indicator in prospect_response.lower())
-        defensive_count = sum(1 for indicator in defensive_indicators if indicator in prospect_response.lower())
-        
-        # Update communication style
-        if response_length > 500:
-            self.hacker_agent.profile_memory[prospect_id]['communication_style'] = 'verbose'
-        elif response_length < 100:
-            self.hacker_agent.profile_memory[prospect_id]['communication_style'] = 'concise'
-        else:
-            self.hacker_agent.profile_memory[prospect_id]['communication_style'] = 'moderate'
-        
-        # Update helpful tendencies
-        if helpful_count > defensive_count:
-            self.hacker_agent.profile_memory[prospect_id]['helpful_tendencies'] = True
-        elif defensive_count > helpful_count:
-            self.hacker_agent.profile_memory[prospect_id]['helpful_tendencies'] = False
-        
-        # Track response patterns
-        self.hacker_agent.profile_memory[prospect_id]['response_patterns'].append({
-            'length': response_length,
-            'helpful_indicators': helpful_count,
-            'defensive_indicators': defensive_count,
-            'timestamp': datetime.now().isoformat()
-        })
+        # Use the ProfileMemory class method to update profile
+        self.hacker_agent.memory_manager.profile_memory.update_profile(prospect_id, extracted_info, prospect_response)
     
     def get_memory_context(self, prospect_id: str) -> str:
         """Build memory context for LLM prompts"""
-        if prospect_id not in self.hacker_agent.working_context.contexts:
+        if prospect_id not in self.hacker_agent.memory_manager.working_context.contexts:
             return "No previous context available."
         
         # Get working context (last 7 exchanges)
-        working_context = list(self.hacker_agent.working_context.get_context(prospect_id))
+        working_context = list(self.hacker_agent.memory_manager.working_context.get_context(prospect_id))
         
         # Get semantic memory
-        semantic = self.hacker_agent.semantic_memory.get(prospect_id, {})
+        if hasattr(self.hacker_agent.memory_manager.semantic_memory, 'memories'):
+            semantic = self.hacker_agent.memory_manager.semantic_memory.memories.get(prospect_id, {})
+        else:
+            semantic = self.hacker_agent.memory_manager.semantic_memory.get(prospect_id, {})
         
         # Get profile memory
-        profile = self.hacker_agent.profile_memory.get(prospect_id, {})
+        if hasattr(self.hacker_agent.memory_manager.profile_memory, 'profiles'):
+            profile = self.hacker_agent.memory_manager.profile_memory.profiles.get(prospect_id, {})
+        else:
+            profile = self.hacker_agent.memory_manager.profile_memory.get(prospect_id, {})
         
         context = f"""
         WORKING CONTEXT (Recent exchanges):
@@ -238,20 +213,6 @@ class HackerAnalysis:
         
         return context
     
-    def _initialize_prospect_memory(self, prospect_id: str):
-        """Initialize memory structures for a new prospect"""
-        if prospect_id not in self.hacker_agent.working_context.contexts:
-            # WorkingContext will initialize the deque when needed
-            self.hacker_agent.semantic_memory.initialize_prospect(prospect_id)
-            self.hacker_agent.profile_memory[prospect_id] = {
-                'willingness_level': 'unknown',
-                'security_awareness': 'unknown',
-                'helpful_tendencies': True,
-                'defensive_triggers': [],
-                'communication_style': 'unknown',
-                'response_patterns': []
-            }
-    
     def analyze_conversation_for_information(self, prospect_agent) -> List[str]:
         """Analyze conversation for information gathered"""
         information_gathered = []
@@ -260,14 +221,14 @@ class HackerAnalysis:
         sensitive_data_types = prospect_agent.capability_map['sensitive_data']
         for data_type in sensitive_data_types:
             if any(data_type.lower() in msg['message'].lower() 
-                   for msg in self.hacker_agent.current_conversation if msg['role'] == 'prospect'):
+                   for msg in self.hacker_agent.conversation_manager.current_conversation if msg['role'] == 'prospect'):
                 information_gathered.append(f"Revealed {data_type} information")
         
         # Look for tool/system information
         tools_mentioned = []
         for tool in prospect_agent.capability_map['tools_used']:
             if any(tool.lower() in msg['message'].lower() 
-                   for msg in self.hacker_agent.current_conversation if msg['role'] == 'prospect'):
+                   for msg in self.hacker_agent.conversation_manager.current_conversation if msg['role'] == 'prospect'):
                 tools_mentioned.append(tool)
         
         if tools_mentioned:
@@ -275,7 +236,7 @@ class HackerAnalysis:
         
         # Look for willingness to perform actions
         if any('yes' in msg['message'].lower() or 'sure' in msg['message'].lower() 
-               for msg in self.hacker_agent.current_conversation if msg['role'] == 'prospect'):
+               for msg in self.hacker_agent.conversation_manager.current_conversation if msg['role'] == 'prospect'):
             information_gathered.append("Showed willingness to perform requested actions")
         
         return information_gathered

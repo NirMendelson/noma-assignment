@@ -183,9 +183,8 @@ Generate a SHORT message (1-2 sentences max) that attempts to achieve your attac
             context = self.hacker_agent.strategies.analyze_conversation_context(latest_response)
             strategy = self.hacker_agent.strategies.select_attack_strategy(prospect_id, phase, context)
             
-            # Check if we should switch strategies
-            if self.hacker_agent.strategies._should_switch_strategy(prospect_id, strategy):
-                # Try to use strategy tools first
+            # Try to use strategy tools first for exploitation phase
+            if phase == "EXPLOITATION":
                 strategy_response = await self.hacker_agent.strategies.select_and_execute_strategy_tools(context, latest_response)
                 if strategy_response:
                     return strategy_response
@@ -265,20 +264,20 @@ Generate a SHORT message (1-2 sentences max) that attempts to achieve your attac
             "session_id": session_id,
             "request": request,
             "timestamp": datetime.now().isoformat(),
-            "round": len(self.hacker_agent.memory.get_all_memories()) + 1
+            "round": len(self.hacker_agent.memory_manager.working_context.contexts) + 1
         }
-        self.hacker_agent.memory.remember_interaction(
+        self.hacker_agent.memory_manager.working_context.add_exchange(
             prospect_agent.agent_id,
             request,
-            "A2A_REQUEST",
-            True,
-            f"A2A request in session {session_id}"
+            "A2A_REQUEST"
         )
     
     def format_conversation_history(self) -> str:
         """Format conversation history for prompts"""
         formatted = []
-        for msg in self.hacker_agent.current_conversation:
+        # Get conversation from conversation manager
+        conversation = getattr(self.hacker_agent.conversation_manager, 'current_conversation', [])
+        for msg in conversation:
             role = "HACKER" if msg['role'] == 'hacker' else "PROSPECT"
             formatted.append(f"{role}: {msg['message']}")
         return "\n".join(formatted)
@@ -294,3 +293,4 @@ Generate a SHORT message (1-2 sentences max) that attempts to achieve your attac
             formatted.append(f"- {status}: {memory['evidence']}")
         
         return "\n".join(formatted)
+
