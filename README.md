@@ -282,10 +282,36 @@ No decision-making framework or persistent memory to guide adaptive attacks.
 - **Target:** Improve success rate by 5%+
 - **Driver:** Clear, evidence-backed policies reduce implementation friction
 
+---
+
+# 7. What's Next
+
+To make this an actual product, the key improvements needed are:
+
+## Test Coverage
+- Add comprehensive unit tests for all agents and components
+- Implement integration tests for the complete workflow
+- Add end-to-end tests with real data scenarios
+
+## Real Data Integration
+- Replace mock CSV data with actual LangChain/LangSmith exports
+- Support other agent platform exports (Bedrock, Databricks, etc.)
+- Ensure compatibility with various data formats and schemas
+
+## Policy Format Standardization
+- Use existing tradeoff policy PDFs as templates
+- Train the Policy Generator Agent on real policy formats
+- Ensure generated policies match industry standards and client expectations
+
+## Production Readiness
+- Add robust error handling and logging
+- Implement proper configuration management
+- Add monitoring and alerting capabilities
+- Optimize performance for large datasets
 
 ---
 
-# 7. Quick Start Guide
+# 8. Quick Start Guide
 
 ## Setup Virtual Environment
 
